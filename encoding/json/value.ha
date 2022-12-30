@@ -185,8 +185,7 @@ export fn finish(val: value) void = {
 				free(bucket[j].0);
 				finish(bucket[j].1);
 			};
-			// TODO: https://todo.sr.ht/~sircmpwn/hare/690
-			//free(bucket);
+			free(*bucket);
 		};
 	case => void;
 	};

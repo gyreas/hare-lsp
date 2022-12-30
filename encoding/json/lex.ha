@@ -39,6 +39,7 @@ export fn newlexer(src: io::handle) lexer = {
 // Frees state associated with a JSON lexer.
 export fn close(lex: *lexer) void = {
 	free(lex.buffer);
+	io::close(&lex.strbuf)!;
 };
 
 // Returns the next token from a JSON lexer. The return value is borrowed from
