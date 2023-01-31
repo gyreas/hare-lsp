@@ -67,10 +67,13 @@ fn _load(lexer: *lexer, level: uint, limit: uint) (value | error) = {
 };
 
 fn _load_array(lexer: *lexer, level: uint, limit: uint) (value | error) = {
+	let success = false;
 	let array: []value = [];
+	defer if (!success) finish(array);
 	let tok = mustscan(lexer)?;
 	match (tok) {
 	case arrayend =>
+		success = true;
 		return array;
 	case =>
 		unlex(lexer, tok);
@@ -87,14 +90,18 @@ fn _load_array(lexer: *lexer, level: uint, limit: uint) (value | error) = {
 			return lexer.loc: invalid;
 		};
 	};
+	success = true;
 	return array;
 };
 
 fn _load_obj(lexer: *lexer, level: uint, limit: uint) (value | error) = {
+	let success = false;
 	let obj = newobject();
+	defer if (!success) finish(obj);
 	let tok = mustscan(lexer)?;
 	match (tok) {
 	case objend =>
+		success = true;
 		return obj;
 	case =>
 		unlex(lexer, tok);
@@ -128,6 +135,7 @@ fn _load_obj(lexer: *lexer, level: uint, limit: uint) (value | error) = {
 		};
 	};
 
+	success = true;
 	return obj;
 };
 
