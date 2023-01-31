@@ -160,17 +160,21 @@ export fn equal(a: value, b: value) bool = {
 		return true;
 	case let a: object =>
 		if (!(b is object)) return false;
-		let a = iter(&a), b = iter(&(b as object));
+		let b = b as object;
+		if (count(&a) != count(&b)) {
+			return false;
+		};
+		let a = iter(&a);
 		for (true) match (next(&a)) {
 		case let a: (const str, const *value) =>
-			match (next(&b)) {
-			case let b: (const str, const *value) =>
-				if (a.0 != b.0 || !equal(*a.1, *b.1)) {
+			match (get(&b, a.0)) {
+			case let b: *value =>
+				if (!equal(*a.1, *b)) {
 					return false;
 				};
+			case void => return false;
 			};
-		case void =>
-			return next(&b) is void;
+		case void => break;
 		};
 		return true;
 	};

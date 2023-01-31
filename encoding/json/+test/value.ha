@@ -33,3 +33,17 @@
 	assert(next(&it) is (const str, const *value));
 	assert(next(&it) is void);
 };
+
+@test fn equal() void = {
+	let a = newobject();
+	defer finish(a);
+	set(&a, "a", 42.0);
+	set(&a, "A", "hello");
+
+	let b = newobject();
+	defer finish(b);
+	set(&b, "A", "hello");
+	set(&b, "a", 42.0);
+
+	assert(equal(a, b));
+};
