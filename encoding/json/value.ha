@@ -8,6 +8,7 @@ export def OBJECT_BUCKETS: size = 32;
 
 export type object = struct {
 	buckets: [OBJECT_BUCKETS][](str, value),
+	count: size,
 };
 
 // A JSON value.
@@ -42,6 +43,7 @@ export fn set(obj: *object, key: const str, val: const value) void = {
 			return;
 		};
 	};
+	obj.count += 1;
 	append(bucket, (strings::dup(key), dup(val)));
 };
 
@@ -53,6 +55,7 @@ export fn del(obj: *object, keys: const str...) void = {
 		const bucket = &obj.buckets[hash % len(obj.buckets)];
 		for (let i = 0z; i < len(bucket); i += 1) {
 			if (bucket[i].0 == key) {
+				obj.count -= 1;
 				free(bucket[i].0);
 				finish(bucket[i].1);
 				delete(bucket[i]);
@@ -71,6 +74,11 @@ export fn reset(obj: *object) void = {
 	case let v: (const str, const *value) =>
 		del(obj, v.0);
 	};
+};
+
+// Returns the number of key/value pairs in a JSON object.
+export fn count(obj: *object) size = {
+	return obj.count;
 };
 
 export type iterator = struct {
