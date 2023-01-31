@@ -6,7 +6,7 @@ fn roundtrip(input: str, expected: value) void = {
 	assert(equal(val, expected));
 	const s = dumpstr(val);
 	defer free(s);
-	const val = loadstr(input)!;
+	const val = loadstr(s)!;
 	defer finish(val);
 	assert(equal(val, expected));
 };
