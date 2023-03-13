@@ -122,9 +122,7 @@ fn _load_obj(lexer: *lexer, level: uint, limit: uint) (value | error) = {
 			return lexer.loc: invalid;
 		};
 
-		const val = _load(lexer, level, limit)?;
-		defer finish(val);
-		set(&obj, key, val);
+		put(&obj, key, _load(lexer, level, limit)?);
 
 		tok = mustscan(lexer)?;
 		match (tok) {

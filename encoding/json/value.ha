@@ -34,33 +34,48 @@ export fn get(obj: *object, key: str) (*value | void) = {
 
 // Sets a value in a JSON object. The key and value will be duplicated.
 export fn set(obj: *object, key: const str, val: const value) void = {
+	put(obj, key, dup(val));
+};
+
+// Sets a value in a JSON object. The key will be duplicated. The object will
+// assume ownership over the value, without duplicating it.
+export fn put(obj: *object, key: const str, val: const value) void = {
 	const hash = fnv::string(key);
 	const bucket = &obj.buckets[hash % len(obj.buckets)];
 	for (let i = 0z; i < len(bucket); i += 1) {
 		if (bucket[i].0 == key) {
 			finish(bucket[i].1);
-			bucket[i].1 = dup(val);
+			bucket[i].1 = val;
 			return;
 		};
 	};
 	obj.count += 1;
-	append(bucket, (strings::dup(key), dup(val)));
+	append(bucket, (strings::dup(key), val));
 };
 
 // Deletes values from a JSON object, if they are present.
 export fn del(obj: *object, keys: const str...) void = {
 	for (let i = 0z; i < len(keys); i += 1) {
-		const key = keys[i];
-		const hash = fnv::string(key);
-		const bucket = &obj.buckets[hash % len(obj.buckets)];
-		for (let i = 0z; i < len(bucket); i += 1) {
-			if (bucket[i].0 == key) {
-				obj.count -= 1;
-				free(bucket[i].0);
-				finish(bucket[i].1);
-				delete(bucket[i]);
-				break;
-			};
+		match (take(obj, keys[i])) {
+		case let val: value =>
+			finish(val);
+		case void => void;
+		};
+	};
+};
+
+// Deletes a key from a JSON object, returning its previous value, if any.
+// The caller is responsible for freeing the value.
+export fn take(obj: *object, key: const str) (value | void) = {
+	const hash = fnv::string(key);
+	const bucket = &obj.buckets[hash % len(obj.buckets)];
+	for (let i = 0z; i < len(bucket); i += 1) {
+		if (bucket[i].0 == key) {
+			obj.count -= 1;
+			free(bucket[i].0);
+			const val = bucket[i].1;
+			delete(bucket[i]);
+			return val;
 		};
 	};
 };
