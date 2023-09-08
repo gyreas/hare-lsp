@@ -3,7 +3,7 @@
 use fmt;
 use io;
 use strings;
-use strio;
+use memio;
 
 // Dumps a [[value]] into an [[io::handle]] as a string without any additional
 // formatting.
@@ -78,7 +78,7 @@ export fn dump(out: io::handle, val: value) (size | io::error) = {
 // Dumps a [[value]] into a string without any additional formatting. The caller
 // must free the return value.
 export fn dumpstr(val: value) str = {
-	let s = strio::dynamic();
+	let s = memio::dynamic();
 	dump(&s, val)!;
-	return strio::string(&s);
+	return memio::string(&s)!;
 };

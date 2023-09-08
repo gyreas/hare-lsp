@@ -1,4 +1,4 @@
-use bufio;
+use memio;
 use io;
 use strings;
 use types;
@@ -36,7 +36,7 @@ export fn load(src: io::handle, opts: load_option...) (value | error) = {
 // See the documentation for [[load]] for information on dealing with
 // potentially malicious inputs.
 export fn loadstr(input: str, opts: load_option...) (value | error) = {
-	let src = bufio::fixed(strings::toutf8(input), io::mode::READ);
+	let src = memio::fixed(strings::toutf8(input));
 	return load(&src, opts...);
 };
 

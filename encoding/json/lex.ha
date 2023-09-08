@@ -7,12 +7,12 @@ use io;
 use os;
 use strconv;
 use strings;
-use strio;
+use memio;
 
 export type lexer = struct {
 	src: io::handle,
 	buffer: []u8,
-	strbuf: strio::stream,
+	strbuf: memio::stream,
 	un: (token | void),
 	rb: (rune | void),
 	loc: (uint, uint),
@@ -24,11 +24,11 @@ export type lexer = struct {
 // Creates a new JSON lexer. The caller may obtain tokens with [[lex]] and
 // should pass the result to [[close]] when they're done with it.
 export fn newlexer(src: io::handle) lexer = {
-	let buf: []u8 = alloc([0...], os::BUFSIZ);
+	let buf: []u8 = alloc([0...], os::BUFSZ);
 	return lexer {
 		src = src,
 		buffer = buf,
-		strbuf = strio::dynamic(),
+		strbuf = memio::dynamic(),
 		un = void,
 		rb = void,
 		loc = (1, 0),
@@ -117,7 +117,7 @@ export fn unlex(lex: *lexer, tok: token) void = {
 // Scans until encountering a non-alphabetical character, returning the
 // resulting word.
 fn scan_word(lex: *lexer) (str | error) = {
-	strio::reset(&lex.strbuf);
+	memio::reset(&lex.strbuf);
 
 	for (true) {
 		const rn = match (nextrune(lex)?) {
@@ -130,10 +130,10 @@ fn scan_word(lex: *lexer) (str | error) = {
 			unget(lex, rn);
 			break;
 		};
-		strio::appendrune(&lex.strbuf, rn)!;
+		memio::appendrune(&lex.strbuf, rn)!;
 	};
 
-	return strio::string(&lex.strbuf);
+	return memio::string(&lex.strbuf)!;
 };
 
 type numstate = enum {
@@ -149,7 +149,7 @@ type numstate = enum {
 };
 
 fn scan_number(lex: *lexer) (token | error) = {
-	strio::reset(&lex.strbuf);
+	memio::reset(&lex.strbuf);
 
 	let state = numstate::SIGN;
 	for (true) {
@@ -235,10 +235,10 @@ fn scan_number(lex: *lexer) (token | error) = {
 			};
 		};
 
-		strio::appendrune(&lex.strbuf, rn)!;
+		memio::appendrune(&lex.strbuf, rn)!;
 	};
 
-	match (strconv::stof64(strio::string(&lex.strbuf))) {
+	match (strconv::stof64(memio::string(&lex.strbuf)!)) {
 	case let f: f64 =>
 		return f;
 	case =>
@@ -247,7 +247,7 @@ fn scan_number(lex: *lexer) (token | error) = {
 };
 
 fn scan_str(lex: *lexer) (token | error) = {
-	strio::reset(&lex.strbuf);
+	memio::reset(&lex.strbuf);
 
 	for (true) {
 		const rn = match (nextrune(lex)?) {
@@ -263,16 +263,16 @@ fn scan_str(lex: *lexer) (token | error) = {
 			break;
 		case '\\' =>
 			const rn = scan_escape(lex)?;
-			strio::appendrune(&lex.strbuf, rn)!;
+			memio::appendrune(&lex.strbuf, rn)!;
 		case =>
 			if (iscntrl(rn)) {
 				return lex.loc: invalid;
 			};
-			strio::appendrune(&lex.strbuf, rn)!;
+			memio::appendrune(&lex.strbuf, rn)!;
 		};
 	};
 
-	return strio::string(&lex.strbuf);
+	return memio::string(&lex.strbuf)!;
 };
 
 fn scan_escape(lex: *lexer) (rune | error) = {
