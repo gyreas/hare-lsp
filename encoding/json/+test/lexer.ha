@@ -1,6 +1,6 @@
-use bufio;
-use strings;
 use io;
+use memio;
+use strings;
 
 @test fn lex() void = {
 	const cases: [_](str, []token) = [
@@ -22,7 +22,7 @@ use io;
 
 	for (let i = 0z; i < len(cases); i += 1) {
 		const src = strings::toutf8(cases[i].0);
-		const src = bufio::fixed(src, io::mode::READ);
+		const src = memio::fixed(src);
 		const lexer = newlexer(&src);
 		defer close(&lexer);
 

@@ -339,7 +339,7 @@ fn nextrune(lex: *lexer) (rune | io::EOF | error) = {
 		};
 		return r;
 	};
-	match (bufio::scanrune(lex.src)) {
+	match (bufio::read_rune(lex.src)) {
 	case let err: io::error =>
 		return err;
 	case utf8::invalid =>

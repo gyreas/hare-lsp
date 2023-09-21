@@ -52,7 +52,7 @@ fn errassert(input: str, expected_loc: (uint, uint)) void = {
 	roundtrip(`{"foo\u0000bar": 42}`, obj);
 	reset(&obj);
 	set(&obj, "min", -1.0e+28);
-	set(&obj, "max", +1.0e+28);
+	set(&obj, "max", 1.0e+28);
 	roundtrip(`{"min": -1.0e+28, "max": 1.0e+28}`, obj);
 	reset(&obj);
 	set(&obj, "id", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
