@@ -31,6 +31,6 @@ install:
 	install -m644 encoding/json/*.ha "$(DESTDIR)$(THIRDPARTYDIR)"/encoding/json
 
 uninstall:
-	rm -rf $(DESTDIR)$(THIRDPARTYDIR)/encoding
+	rm -rf $(DESTDIR)$(THIRDPARTYDIR)/encoding/json
 
 .PHONY: all docs clean check install uninstall
