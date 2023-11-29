@@ -370,7 +370,6 @@ fn nextrunews(lex: *lexer) (rune | io::EOF | error) = {
 			return io::EOF;
 		};
 	};
-	abort(); // Unreachable
 };
 
 fn unget(lex: *lexer, r: rune) void = {
