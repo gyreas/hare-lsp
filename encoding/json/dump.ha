@@ -36,7 +36,7 @@ export fn dump(out: io::handle, val: value) (size | io::error) = {
 				z += fmt::fprint(out, `\\`)?;
 			case =>
 				if (iscntrl(r)) {
-					z += fmt::fprintf(out, `\u{:04x}`,
+					z += fmt::fprintf(out, `\u{:.4x}`,
 						r: u32)?;
 				} else {
 					z += fmt::fprint(out, r)?;
