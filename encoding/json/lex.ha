@@ -11,7 +11,6 @@ use memio;
 
 export type lexer = struct {
 	src: io::handle,
-	buffer: []u8,
 	strbuf: memio::stream,
 	un: (token | void),
 	rb: (rune | void),
@@ -23,22 +22,17 @@ export type lexer = struct {
 
 // Creates a new JSON lexer. The caller may obtain tokens with [[lex]] and
 // should pass the result to [[close]] when they're done with it.
-export fn newlexer(src: io::handle) lexer = {
-	let buf: []u8 = alloc([0...], os::BUFSZ);
-	return lexer {
-		src = src,
-		buffer = buf,
-		strbuf = memio::dynamic(),
-		un = void,
-		rb = void,
-		loc = (1, 0),
-		...
-	};
+export fn newlexer(src: io::handle) lexer = lexer {
+	src = src,
+	strbuf = memio::dynamic(),
+	un = void,
+	rb = void,
+	loc = (1, 0),
+	...
 };
 
 // Frees state associated with a JSON lexer.
 export fn close(lex: *lexer) void = {
-	free(lex.buffer);
 	io::close(&lex.strbuf)!;
 };
 
