@@ -15,10 +15,7 @@ export fn dump(out: io::handle, val: value) (size | io::error) = {
 	case let s: str =>
 		z += fmt::fprint(out, `"`)?;
 		let it = strings::iter(s);
-		for (true) match (strings::next(&it)) {
-		case void =>
-			break;
-		case let r: rune =>
+		for (const r => strings::next(&it)) {
 			switch (r) {
 			case '\b' =>
 				z += fmt::fprint(out, `\b`)?;
