@@ -308,7 +308,7 @@ fn scan_escape(lex: *lexer) (rune | error) = {
 		case =>
 			return lex.loc: invalid;
 		};
-		match (strconv::stou32b(s, strconv::base::HEX)) {
+		match (strconv::stou32(s, strconv::base::HEX)) {
 		case let u: u32 =>
 			lex.loc.1 += 4;
 			return u: rune;
