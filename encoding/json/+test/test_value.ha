@@ -5,9 +5,9 @@
 	let obj = newobject();
 	defer finish(obj);
 
-	set(&obj, "hello", "world");
-	set(&obj, "foo", "bar");
-	set(&obj, "the answer", 42.0);
+	set(&obj, "hello", "world")!;
+	set(&obj, "foo", "bar")!;
+	set(&obj, "the answer", 42.0)!;
 
 	// XXX: Match overhaul?
 	assert(*(get(&obj, "hello") as *value) as str == "world");
@@ -23,9 +23,9 @@
 	let obj = newobject();
 	defer finish(obj);
 
-	set(&obj, "hello", "world");
-	set(&obj, "foo", "bar");
-	set(&obj, "the answer", 42.0);
+	set(&obj, "hello", "world")!;
+	set(&obj, "foo", "bar")!;
+	set(&obj, "the answer", 42.0)!;
 
 	let it = iter(&obj);
 	assert(next(&it) is (const str, const *value));
@@ -37,13 +37,13 @@
 @test fn equal() void = {
 	let a = newobject();
 	defer finish(a);
-	set(&a, "a", 42.0);
-	set(&a, "A", "hello");
+	set(&a, "a", 42.0)!;
+	set(&a, "A", "hello")!;
 
 	let b = newobject();
 	defer finish(b);
-	set(&b, "A", "hello");
-	set(&b, "a", 42.0);
+	set(&b, "A", "hello")!;
+	set(&b, "a", 42.0)!;
 
 	assert(equal(a, b));
 };

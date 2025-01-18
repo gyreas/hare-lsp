@@ -19,7 +19,7 @@ export type nestlimit = uint;
 // or incorporate an [[io::limitreader]] or similar. Alternatively, you can use
 // the JSON lexer ([[lex]]) directly if dealing with potentially malicious
 // inputs.
-export fn load(src: io::handle, opts: load_option...) (value | error) = {
+export fn load(src: io::handle, opts: load_option...) (value | nomem | error) = {
 	let limit = types::UINT_MAX;
 	for (let i = 0z; i < len(opts); i += 1) {
 		limit = opts[i]: nestlimit: uint;
@@ -35,12 +35,12 @@ export fn load(src: io::handle, opts: load_option...) (value | error) = {
 //
 // See the documentation for [[load]] for information on dealing with
 // potentially malicious inputs.
-export fn loadstr(input: str, opts: load_option...) (value | error) = {
+export fn loadstr(input: str, opts: load_option...) (value | nomem | error) = {
 	let src = memio::fixed(strings::toutf8(input));
 	return load(&src, opts...);
 };
 
-fn _load(lexer: *lexer, level: uint, limit: uint) (value | error) = {
+fn _load(lexer: *lexer, level: uint, limit: uint) (value | nomem | error) = {
 	const tok = mustscan(lexer)?;
 	match (tok) {
 	case _null =>
@@ -66,7 +66,7 @@ fn _load(lexer: *lexer, level: uint, limit: uint) (value | error) = {
 	};
 };
 
-fn _load_array(lexer: *lexer, level: uint, limit: uint) (value | error) = {
+fn _load_array(lexer: *lexer, level: uint, limit: uint) (value | nomem | error) = {
 	let success = false;
 	let array: []value = [];
 	defer if (!success) finish(array);
@@ -80,7 +80,7 @@ fn _load_array(lexer: *lexer, level: uint, limit: uint) (value | error) = {
 	};
 
 	for (true) {
-		append(array, _load(lexer, level, limit)?);
+		append(array, _load(lexer, level, limit)?)?;
 
 		tok = mustscan(lexer)?;
 		match (tok) {
@@ -94,7 +94,7 @@ fn _load_array(lexer: *lexer, level: uint, limit: uint) (value | error) = {
 	return array;
 };
 
-fn _load_obj(lexer: *lexer, level: uint, limit: uint) (value | error) = {
+fn _load_obj(lexer: *lexer, level: uint, limit: uint) (value | nomem | error) = {
 	let success = false;
 	let obj = newobject();
 	defer if (!success) finish(obj);
@@ -122,7 +122,7 @@ fn _load_obj(lexer: *lexer, level: uint, limit: uint) (value | error) = {
 			return lexer.loc: invalid;
 		};
 
-		put(&obj, key, _load(lexer, level, limit)?);
+		put(&obj, key, _load(lexer, level, limit)?)?;
 
 		tok = mustscan(lexer)?;
 		match (tok) {

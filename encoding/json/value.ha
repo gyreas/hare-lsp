@@ -33,13 +33,13 @@ export fn get(obj: *object, key: str) (*value | void) = {
 };
 
 // Sets a value in a JSON object. The key and value will be duplicated.
-export fn set(obj: *object, key: const str, val: const value) void = {
-	put(obj, key, dup(val));
+export fn set(obj: *object, key: const str, val: const value) (void | nomem) = {
+	put(obj, key, dup(val)?)?;
 };
 
 // Sets a value in a JSON object. The key will be duplicated. The object will
 // assume ownership over the value, without duplicating it.
-export fn put(obj: *object, key: const str, val: const value) void = {
+export fn put(obj: *object, key: const str, val: value) (void | nomem) = {
 	const hash = fnv::string(key);
 	const bucket = &obj.buckets[hash % len(obj.buckets)];
 	for (let i = 0z; i < len(bucket); i += 1) {
@@ -50,7 +50,7 @@ export fn put(obj: *object, key: const str, val: const value) void = {
 		};
 	};
 	obj.count += 1;
-	append(bucket, (strings::dup(key), val));
+	append(bucket, (strings::dup(key), val))?;
 };
 
 // Deletes values from a JSON object, if they are present.
@@ -124,14 +124,14 @@ export fn next(iter: *iterator) ((const str, const *value) | void) = {
 
 // Duplicates a JSON value. The caller must pass the return value to [[finish]]
 // to free associated resources when they're done using it.
-export fn dup(val: value) value = {
+export fn dup(val: value) (value | nomem) = {
 	match (val) {
 	case let s: str =>
 		return strings::dup(s);
 	case let v: []value =>
-		let new: []value = alloc([], len(v));
+		let new: []value = alloc([], len(v))?;
 		for (let i = 0z; i < len(v); i += 1) {
-			append(new, dup(v[i]));
+			append(new, dup(v[i])?)?;
 		};
 		return new;
 	case let o: object =>
@@ -144,7 +144,7 @@ export fn dup(val: value) value = {
 			case let pair: (const str, const *value) =>
 				yield pair;
 			};
-			set(&new, pair.0, *pair.1);
+			set(&new, pair.0, *pair.1)?;
 		};
 		return new;
 	case =>
