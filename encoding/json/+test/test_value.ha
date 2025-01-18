@@ -31,7 +31,7 @@
 	assert(next(&it) is (const str, const *value));
 	assert(next(&it) is (const str, const *value));
 	assert(next(&it) is (const str, const *value));
-	assert(next(&it) is void);
+	assert(next(&it) is done);
 };
 
 @test fn equal() void = {

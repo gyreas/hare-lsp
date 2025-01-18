@@ -56,9 +56,7 @@ export fn dump(out: io::handle, val: value) (size | io::error) = {
 		z += fmt::fprint(out, "{")?;
 		let comma = false;
 		let it = iter(&o);
-		for (true) match (next(&it)) {
-		case void => break;
-		case let pair: (const str, const *value) =>
+		for (let pair => next(&it)) {
 			if (comma) {
 				z += fmt::fprint(out, ",")?;
 			};

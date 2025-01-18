@@ -83,10 +83,7 @@ export fn take(obj: *object, key: const str) (value | void) = {
 // Clears all values from a JSON object, leaving it empty.
 export fn reset(obj: *object) void = {
 	let it = iter(obj);
-	for (true) match (next(&it)) {
-	case void =>
-		break;
-	case let v: (const str, const *value) =>
+	for (let v => next(&it)) {
 		del(obj, v.0);
 	};
 };
@@ -109,7 +106,7 @@ export fn iter(obj: *object) iterator = {
 };
 
 // Returns the next key/value pair from this iterator, or void if none remain.
-export fn next(iter: *iterator) ((const str, const *value) | void) = {
+export fn next(iter: *iterator) ((const str, const *value) | done) = {
 	for (iter.i < len(iter.obj.buckets); iter.i += 1) {
 		const bucket = &iter.obj.buckets[iter.i];
 		for (iter.j < len(bucket)) {
@@ -120,6 +117,7 @@ export fn next(iter: *iterator) ((const str, const *value) | void) = {
 		};
 		iter.j = 0;
 	};
+	return done;
 };
 
 // Duplicates a JSON value. The caller must pass the return value to [[finish]]
@@ -142,13 +140,7 @@ export fn dup(val: value) (value | nomem) = {
 		let ok = false;
 		defer if (!ok) finish(new);
 		const i = iter(&o);
-		for (true) {
-			const pair = match (next(&i)) {
-			case void =>
-				break;
-			case let pair: (const str, const *value) =>
-				yield pair;
-			};
+		for (let pair => next(&i)) {
 			set(&new, pair.0, *pair.1)?;
 		};
 		ok = true;
@@ -186,8 +178,7 @@ export fn equal(a: value, b: value) bool = {
 			return false;
 		};
 		let a = iter(&a);
-		for (true) match (next(&a)) {
-		case let a: (const str, const *value) =>
+		for (let a => next(&a)) {
 			match (get(&b, a.0)) {
 			case let b: *value =>
 				if (!equal(*a.1, *b)) {
@@ -195,7 +186,6 @@ export fn equal(a: value, b: value) bool = {
 				};
 			case void => return false;
 			};
-		case void => break;
 		};
 		return true;
 	};
