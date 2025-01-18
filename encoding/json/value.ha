@@ -130,12 +130,17 @@ export fn dup(val: value) (value | nomem) = {
 		return strings::dup(s);
 	case let v: []value =>
 		let new: []value = alloc([], len(v))?;
+		let ok = false;
+		defer if (!ok) finish(new);
 		for (let i = 0z; i < len(v); i += 1) {
 			append(new, dup(v[i])?)?;
 		};
+		ok = true;
 		return new;
 	case let o: object =>
 		let new = newobject();
+		let ok = false;
+		defer if (!ok) finish(new);
 		const i = iter(&o);
 		for (true) {
 			const pair = match (next(&i)) {
@@ -146,6 +151,7 @@ export fn dup(val: value) (value | nomem) = {
 			};
 			set(&new, pair.0, *pair.1)?;
 		};
+		ok = true;
 		return new;
 	case =>
 		return val;
