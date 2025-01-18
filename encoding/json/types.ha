@@ -44,6 +44,8 @@ export fn strerror(err: error) const str = {
 	case let err: invalid =>
 		return fmt::bsprintf(buf,
 			"{}:{}: Invalid JSON token encountered", err.0, err.1);
+	case let err: limitreached =>
+		return "Reached maximum nesting limit";
 	case let err: io::error =>
 		return io::strerror(err);
 	};
