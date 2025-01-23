@@ -50,7 +50,7 @@ fn _load(lexer: *lexer, level: uint, limit: uint) (value | nomem | error) = {
 	case let f: f64 =>
 		return f;
 	case let s: str =>
-		return strings::dup(s);
+		return strings::dup(s)?;
 	case arraystart =>
 		if (level == limit) {
 			return limitreached;
@@ -111,7 +111,7 @@ fn _load_obj(lexer: *lexer, level: uint, limit: uint) (value | nomem | error) = 
 		let tok = mustscan(lexer)?;
 		const key = match (tok) {
 		case let s: str =>
-			yield strings::dup(s);
+			yield strings::dup(s)?;
 		case =>
 			return lexer.loc: invalid;
 		};

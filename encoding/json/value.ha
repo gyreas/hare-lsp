@@ -50,7 +50,13 @@ export fn put(obj: *object, key: const str, val: value) (void | nomem) = {
 		};
 	};
 	obj.count += 1;
-	append(bucket, (strings::dup(key), val))?;
+	let key = strings::dup(key)?;
+	match (append(bucket, (key, val))) {
+	case void => void;
+	case nomem =>
+		free(key);
+		return nomem;
+	};
 };
 
 // Deletes values from a JSON object, if they are present.
@@ -125,7 +131,7 @@ export fn next(iter: *iterator) ((const str, const *value) | done) = {
 export fn dup(val: value) (value | nomem) = {
 	match (val) {
 	case let s: str =>
-		return strings::dup(s);
+		return strings::dup(s)?;
 	case let v: []value =>
 		let new: []value = alloc([], len(v))?;
 		let ok = false;
