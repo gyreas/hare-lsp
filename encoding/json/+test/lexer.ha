@@ -18,6 +18,8 @@ use strings;
 		(`"hello world"`, ["hello world"]),
 		(`"\"\\\/\b\f\n\r\t\u0020"`, ["\"\\/\b\f\n\r\t\u0020"]),
 		("[ null, null ]", [arraystart, _null, comma, _null, arrayend]),
+		(`"\u00C6"`, ["Æ"]),
+		(`"\uD835\uDD04"`, ["𝔄"]),
 	];
 
 	for (let i = 0z; i < len(cases); i += 1) {

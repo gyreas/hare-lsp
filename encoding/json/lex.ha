@@ -1,5 +1,6 @@
 // License: MPL-2.0
 // (c) 2022 Drew DeVault <sir@cmpwn.com>
+// (c) 2025 Feliks Weber <jummit@web.de>
 use ascii;
 use bufio;
 use encoding::utf8;
@@ -295,26 +296,45 @@ fn scan_escape(lex: *lexer) (rune | error) = {
 	case 't' =>
 		return '\t';
 	case 'u' =>
-		let buf: [4]u8 = [0...];
-		match (io::readall(lex.src, buf)?) {
-		case io::EOF =>
-			return lex.loc: invalid;
-		case size =>
-			yield;
+		let high = scan_unicode_escape(lex)?;
+		if (high < 0xD800 || high > 0xDFFF) {
+			return high: rune;
 		};
-		const s = match (strings::fromutf8(buf)) {
-		case let s: str =>
-			yield s;
-		case =>
+		if (high < 0xD800 || high > 0xDBFF) {
 			return lex.loc: invalid;
 		};
-		match (strconv::stou32(s, strconv::base::HEX)) {
-		case let u: u32 =>
-			lex.loc.1 += 4;
-			return u: rune;
-		case =>
+		if (nextrune(lex)? != '\\') {
 			return lex.loc: invalid;
 		};
+		if (nextrune(lex)? != 'u') {
+			return lex.loc: invalid;
+		};
+		let low = scan_unicode_escape(lex)?;
+		let res = ((high & 0x03FF) << 10) | (low & 0x03FF);
+		return (res + 0x10000): rune;
+	case =>
+		return lex.loc: invalid;
+	};
+};
+
+fn scan_unicode_escape(lex: *lexer) (u32 | error) = {
+	let buf: [4]u8 = [0...];
+	match (io::readall(lex.src, buf)?) {
+	case io::EOF =>
+		return lex.loc: invalid;
+	case size =>
+		yield;
+	};
+	const s = match (strings::fromutf8(buf)) {
+	case let s: str =>
+		yield s;
+	case =>
+		return lex.loc: invalid;
+	};
+	match (strconv::stou32(s, strconv::base::HEX)) {
+	case let u: u32 =>
+		lex.loc.1 += 4;
+		return u;
 	case =>
 		return lex.loc: invalid;
 	};
