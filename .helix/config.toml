@@ -1,0 +1,15 @@
+[editor]
+text-width = 80
+
+[editor.smart-tab]
+enable = true
+supersede-menu = false
+
+[editor.soft-wrap]
+max-wrap = 80
+
+[editor.lsp]
+enable = true
+
+[keys.insert]
+S-tab = "goto_next_tabstop"
