@@ -7,7 +7,7 @@ use strings;
 
 export def JSONRPC_VERSION: str = "2.0";
 
-export type deserialise_error = !(invalid_json | no_jsonrpc | invalid_version | no_method);
+export type deserialize_error = !(invalid_json | no_jsonrpc | invalid_version | no_method);
 // todo: How does this relate to message batching which
 // requires array of JSON objects?
 export type invalid_json    = !void;
@@ -15,7 +15,7 @@ export type no_jsonrpc      = !void;
 export type invalid_version = !void;
 export type no_method       = !void;
 
-export fn strerror(err: deserialise_error) str = {
+export fn strerror(err: deserialize_error) str = {
 	match (err) {
 	case no_jsonrpc =>
 		return "jsonrpc field missing";
@@ -83,10 +83,10 @@ export fn parse(src: io::handle) (request | notification | error) = {
 	};
 	defer json::finish(v);
 
-	match (deserialise(v)) {
+	match (deserialize(v)) {
 	case let r: (request | notification) =>
 		return r;
-	case let e: deserialise_error =>
+	case let e: deserialize_error =>
 		return error {
 			code = INVALID_REQUEST,
 			message = fmt::asprintf("Invalid Request: {}", strerror(e))!,
@@ -95,7 +95,7 @@ export fn parse(src: io::handle) (request | notification | error) = {
 	};
 };
 
-export fn deserialise(v: json::value) (request | notification | deserialise_error) = {
+export fn deserialize(v: json::value) (request | notification | deserialize_error) = {
 	let v = v as json::object;
 
 	match (json::get(&v, "jsonrpc")) {
@@ -142,7 +142,7 @@ export fn deserialise(v: json::value) (request | notification | deserialise_erro
 	};
 };
 
-export fn request_serialise(req: *request) json::object = {
+export fn request_serialize(req: *request) json::object = {
 	let o = json::newobject();
 	let id = match (req.id) {
 	case let i: i32 => yield i: f64;
@@ -159,7 +159,7 @@ export fn request_serialise(req: *request) json::object = {
 	return o;
 };
 
-export fn notification_serialise(req: *notification) json::object = {
+export fn notification_serialize(req: *notification) json::object = {
 	let o = json::newobject();
 	json::put(&o, "jsonrpc", JSONRPC_VERSION)!;
 	json::put(&o, "method", req.method)!;
