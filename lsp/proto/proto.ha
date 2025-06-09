@@ -35,11 +35,16 @@ export type missing_content_length = !void;
 // Returned when the Content-Length header couldn't be parsed as a string
 export type invalid_content_length = !void;
 
+// Any part of an header, esp. Content-Length, is malformed
+export type malformed_header = !void;
+
 // All possible parser errors
-export type error = !(missing_content_length | invalid_content_length | utf8::invalid);
+export type error = !(missing_content_length | malformed_header | invalid_content_length | utf8::invalid);
 
 export fn strerror(err: error) str = {
 	match (err) {
+	case malformed_header =>
+		return "Message has a malformed or incorrect header";
 	case invalid_content_length =>
 		return "Content-Length header has an invalid value";
 	case missing_content_length =>
