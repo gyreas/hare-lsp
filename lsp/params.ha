@@ -1,4 +1,5 @@
 use encoding::json;
+use net::uri;
 
 export type did_change_text_params = struct {
 	// TODO: Should be a versioned_text_document_item
@@ -24,7 +25,18 @@ export type initialize_params = struct {
 
 	process_id: (i32 | json::_null),
 
+	// deprecated
 	root_path: (str | json::_null | void),
+	// deprecated
+	root_uri: (uri::uri | void),
+
+	// The workspace folders configured in the client when the server starts.
+	// This property is only available if the client supports workspace folders.
+	// It can be `null` if the client supports workspace folders but none are
+	// configured.
+	//
+	// Has higher precedence than `root_path` and `root_uri`
+	workspace_folders: ([]workspace_folder | void),
 
 	initialization_options: (json::value | void),
 

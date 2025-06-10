@@ -75,3 +75,9 @@ export type text_document_item = struct {
 	version: int,
 	text: str,
 };
+
+export type workspace_folder = struct {
+	uri: uri::uri,
+	name: str,
+};
+

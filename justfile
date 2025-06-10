@@ -14,6 +14,6 @@ test: build mcat
 	@for m in rpc/ lsp/; do echo "\n-- testing: [$m]"; hare test $m; done
 	just test-init
 
-test-init:
+test-init: build mcat
 	@build/mcat $(ls messages/init/*.json) | build/harels
 	@[ $? ] && echo "\ntest-init...PASS" || echo "\ntest-init...FAIL"

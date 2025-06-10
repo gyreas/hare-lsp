@@ -1,4 +1,5 @@
 use encoding::json;
+use net::uri;
 use rpc;
 
 export fn deserialize_did_change_text_params(obj: *json::object) (did_change_text_params | deserialize_error) = {
@@ -51,11 +52,30 @@ export fn deserialize_initialize_params(obj: *json::object) (initialize_params |
 	case void => yield void;
 	};
 
-	const root_path = trystrnull(obj, "rootPath")?;
+	let root_path: (str | json::_null | void) = void;
+	let root_uri: (uri::uri | void) = void;
+	const ws_folders = match (tryarray(obj, "workspaceFolders")?) {
+	case void =>
+		match (trystrnull(obj, "rootUri")?) {
+		case void => root_path = trystrnull(obj, "rootPath")?;
+		case let ru: str => root_uri = uri::parse(ru)!;
+		case => void;
+		};
+	case let a: []json::value =>
+		let wsf: []workspace_folder = [];
+		for (let f .. a) {
+			let f = f as json::object;
+			append(wsf, deserialize_workspace_folder(&f)?)!;
+		};
+		yield wsf;
+	};
+
 	return initialize_params {
 		work_done_token = progress.work_done_token,
 		process_id = process_id,
 		root_path = root_path,
+		root_uri = root_uri,
+		workspace_folders = ws_folders,
 		initialization_options = options,
 		// TODO: deserialize remaining configurations from the object
 		capabilities = client_capabilities {
@@ -115,5 +135,22 @@ fn serialize_work_done_token_params(p: *work_done_progress_params, obj: *json::o
 	case void => void;
 	// FIXME: WHy do we need this when not initializing?
 	case => void;
+	};
+};
+
+export fn deserialize_workspace_folder(obj: *json::object) (workspace_folder | deserialize_error) = {
+	let uri = match (trystr(obj, "uri")?) {
+	case let u: str => yield u;
+	case void => return rpc::invalid_json;
+	};
+
+	let name = match (trystr(obj, "name")?) {
+	case let n: str => yield n;
+	case void => return rpc::invalid_json;
+	};
+
+	return workspace_folder {
+		uri = uri::parse(uri)!,
+		name = name,
 	};
 };

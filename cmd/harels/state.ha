@@ -1,3 +1,4 @@
+use encoding::json;
 use fmt;
 use io;
 use lsp::proto;
@@ -19,7 +20,53 @@ const server_vt = lsp::vtable {
 	text_document_did_open   = &handle_did_open,
 };
 
+type state = struct {
+	server: lsp::server,
+	in: *rt::pollfd,
+	out: *rt::pollfd,
+	parser: proto::parser,
+	project_root: uri::uri,
+};
+
+fn newstate(in: *rt::pollfd, out: *rt::pollfd) state = state {
+	project_root = uri::parse("file://root")!,
+	server = lsp::server {
+		vtable = &server_vt,
+		initialized = false,
+		shutdown = false,
+	},
+	in = in,
+	out = out,
+	parser = proto::newparser(in.fd),
+};
+
 fn handle_initialize(s: *lsp::server, params: *lsp::initialize_params) (lsp::initialize_result | lsp::error) = {
+	let s = s: *state;
+
+	let hasroot = false;
+	if (!(params.workspace_folders is void)) {
+		let wsf = params.workspace_folders as []lsp::workspace_folder;
+		if (len(wsf) > 0) {
+			s.project_root = wsf[0].uri;
+			hasroot = true;
+		};
+	} else if (!(params.root_uri is void)) {
+		s.project_root = params.root_uri as uri::uri;
+		hasroot = true;
+	} else if (!(params.root_path is void)) {
+		match (params.root_path as (str | json::_null)) {
+		case json::_null => void;
+		case let rp: str =>
+			s.project_root = uri::parse(rp)!;
+			hasroot = true;
+		};
+	};
+	if (!hasroot) {
+		s.project_root = uri::parse(os::getcwd())!;
+	};
+
+	loginfo("(initialize) workspace root is '{}'", uri::string(&s.project_root)!);
+
 	return lsp::initialize_result {
 		capabilities = lsp::server_capabilities {
 			position_encoding = lsp::POS_ENC_UTF16,

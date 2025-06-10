@@ -1,18 +1,13 @@
+use encoding::json;
 use fmt;
 use io;
 use lsp::proto;
 use lsp;
-use encoding::json;
 use memio;
 use os;
 use rpc;
 use rt;
 use strings;
-
-export type state = struct {
-	server: lsp::server,
-	client: client,
-};
 
 export fn main() void = {
 	let pfds = [rt::pollfd {
@@ -25,14 +20,7 @@ export fn main() void = {
 		revents = -1,
 	}];
 
-	let s = state {
-		server = lsp::server {
-			vtable = &server_vt,
-			initialized = false,
-			shutdown = false,
-		},
-		client = newclient(&pfds[0], &pfds[1]),
-	};
+	let s = newstate(&pfds[0], &pfds[1]);
 
 	for (true) {
 		match (rt::poll(&pfds, len(pfds), -1)) {
@@ -52,13 +40,11 @@ export fn main() void = {
 type client_error = !str;
 
 fn dispatch_client(s: *state) (void | client_error) = {
-	let client = &s.client;
-
-	if ((client.in.revents & rt::POLLIN) != rt::POLLIN) {
+	if ((s.in.revents & rt::POLLIN) != rt::POLLIN) {
 		return;
 	};
 
-	let m = match (proto::next(&client.parser)) {
+	let m = match (proto::next(&s.parser)) {
 	case let m: proto::message =>
 		yield m;
 	case proto::more =>
@@ -79,7 +65,7 @@ fn dispatch_client(s: *state) (void | client_error) = {
 		case let e: lsp::error =>
 			fmt::fatalf("rpc::error: {}", e.message);
 		case let r: rpc::response =>
-			send_response(client, &r);
+			send_response(s, &r);
 		};
 	case let not: rpc::notification =>
 		match (lsp::serve_notification(&s.server, not)) {
@@ -90,7 +76,7 @@ fn dispatch_client(s: *state) (void | client_error) = {
 	};
 };
 
-fn send_response(client: *client, r: *rpc::response) void = {
+fn send_response(s: *state, r: *rpc::response) void = {
 	let rser = rpc::response_serialize(r);
 	defer json::finish(rser);
 
@@ -99,5 +85,5 @@ fn send_response(client: *client, r: *rpc::response) void = {
 
 	// TODO: (non)blocking writes separation
 	// doing: blocking write here
-	proto::write(client.out.fd, &m)!;
+	proto::write(s.out.fd, &m)!;
 };
