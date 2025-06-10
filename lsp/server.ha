@@ -104,10 +104,13 @@ fn _serve_notification(s: *server, notif: rpc::notification) (void | deserialize
 	if (!s.initialized && notif.method != "exit") {
 		return;
 	};
+
+	if (notif.method == "exit") {
+		return s.vtable.exit(s);
+	};
+
 	let params = getobj(notif.params)?;
 	switch (notif.method) {
-	case "exit" =>
-		return s.vtable.exit(s);
 	case "initialized" =>
 		match (s.vtable.initialized) {
 		case *initialized =>

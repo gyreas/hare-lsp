@@ -58,8 +58,8 @@ fn dispatch_client(client: *client) (void | client_error) = {
 		yield m;
 	case proto::more =>
 		return; // message still constructing
-	case proto::error =>
-		fmt::fatalf("error: proto::next");
+	case let e: proto::error =>
+		fmt::fatalf("error: proto::next: {}", proto::strerror(e));
 	};
 	defer proto::message_finish(m);
 

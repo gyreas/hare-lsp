@@ -1,5 +1,19 @@
-run: build
-	printf 'Content-Length: %d\r\nContent-Type: application/hare-jsonrpc\r\n\r\n%s' $(wc -c messages/initialise.json | cut -d' ' -f 1) > .init.rpc
-	cat messages/initialise.json >> .init.rpc
-	./harels < .init.rpc
+phony: test-init
+
 build:
+	hare build cmd/harels
+	@ [ ! -d build/ ] && mkdir build || true
+	@mv harels build/
+
+mcat:
+	hare build -o mcat cmd/mcat.ha
+	@ [ ! -d build/ ] && mkdir build || true
+	@mv mcat build/
+
+test: build mcat
+	@for m in rpc/ lsp/; do echo "\n-- testing: [$m]"; hare test $m; done
+	just test-init
+
+test-init:
+	@build/mcat $(ls messages/init/*.json) | build/harels
+	@[ $? ] && echo "\ntest-init...PASS" || echo "\ntest-init...FAIL"

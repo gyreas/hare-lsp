@@ -8,5 +8,5 @@ scale=0.69
 font_path=/usr/share/fonts/TTF/DejaVuSansMono.ttf
 font_size_interface=8
 font_size_code=10
-width=1000
-height=800
+width=1600
+height=900
