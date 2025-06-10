@@ -2,6 +2,8 @@ use encoding::json;
 use encoding::utf8;
 use strings;
 
+export def HARELS_CONTENT_TYPE: str = "application/hare-jsonrpc";
+
 export type message = struct {
 	headers: headers,
 	// content could be io::handle instead?
@@ -14,7 +16,7 @@ export fn message_fromjson(obj: json::object) message = {
 	return message {
 		headers = headers {
 			content_length = length,
-			content_type = strings::dup("utf-8")!,
+			content_type = strings::dup(HARELS_CONTENT_TYPE)!,
 		},
 		content = content
 	};

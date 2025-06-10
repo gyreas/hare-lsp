@@ -6,9 +6,9 @@ export type deserialize_error = !(stopbuggingmeerr | rpc::deserialize_error);
 
 export type position_encoding = str;
 
-def POS_ENC_UTF8: position_encoding = "utf-8";
-def POS_ENC_UTF16: position_encoding = "utf-16";
-def POS_ENC_UTF32: position_encoding = "utf-32";
+export def POS_ENC_UTF8: position_encoding = "utf-8";
+export def POS_ENC_UTF16: position_encoding = "utf-16";
+export def POS_ENC_UTF32: position_encoding = "utf-32";
 
 export type text_document_sync_kind = enum u8 {
 	NONE = 0,

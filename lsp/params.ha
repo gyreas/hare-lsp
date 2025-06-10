@@ -1,7 +1,5 @@
 use encoding::json;
 
-export def V: i32 = -44;
-
 export type did_change_text_params = struct {
 	// TODO: Should be a versioned_text_document_item
 	text_document: text_document_identifier,

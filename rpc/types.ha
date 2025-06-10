@@ -70,6 +70,7 @@ export type response = struct {
 // caller must free the returned value with [[finish]]. Note that allocations
 // also happens on error, so the error must eventually be freed from a
 // [[response]].
+// TODO: implement for strings as well
 export fn parse(src: io::handle) (request | notification | error) = {
 	let v = match (json::load(src)) {
 	case let v: json::value =>
@@ -81,7 +82,7 @@ export fn parse(src: io::handle) (request | notification | error) = {
 			data = void,
 		};
 	};
-	defer json::finish(v);
+	// defer json::finish(v);
 
 	match (deserialize(v)) {
 	case let r: (request | notification) =>
@@ -168,5 +169,33 @@ export fn notification_serialize(req: *notification) json::object = {
 		json::put(&o, "params", p: json::value)!;
 	case => void;
 	};
+	return o;
+};
+
+export fn response_serialize(res: *response) json::object = {
+	let o = json::newobject();
+
+	match (res.id) {
+	case let i: i32 => json::put(&o, "id", i: f64)!;
+	case let i: str => json::put(&o, "id", i)!;
+	};
+
+	if (res.result is json::value) {
+		json::put(&o, "result", res.result: json::value)!;
+	};
+
+	match (res.error) {
+	case void => void;
+	case let e: error =>
+		let eo = json::newobject();
+		json::put(&eo, "code", e.code: f64)!;
+		json::put(&eo, "message", e.message)!;
+		if (e.data is json::value) {
+			json::put(&eo, "data", e.data: json::value)!;
+		};
+
+		json::put(&o, "error", eo)!;
+	};
+
 	return o;
 };

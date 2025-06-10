@@ -27,13 +27,18 @@ export type parser = struct {
 	buf: []u8,
 	pbuf: []u8,
 	needs_lf: bool,
+	// TODO:
+	// the tag to check if the most recent bytes contain the
+	// valid start of a message, that is if a 'C' was seen.
+	// it is reset when a message is successfully parsed
+	needs_valid_start: bool,
 
 	ringb: memio::stream, // Internal
 };
 
 // Initializes a LSP parser. The caller must call [[finish]] when done with
 // parsing messages.
-export fn newparser(in: *io::stream) parser = {
+export fn newparser(in: io::handle) parser = {
 	return parser {
 		state = header,
 		in = in,
@@ -148,13 +153,9 @@ fn read_fragmented(p: *parser) (void | more | error | io::error) = {
 				p.needs_lf = true;
 				return more;
 			};
-			if (fragment[l-1] == '\r') {
-				p.needs_lf = true;
-				append(p.buf, fragment[..(l-1)]...)!;
-			} else {
-				p.needs_lf = false;
-				append(p.buf, fragment...)!;
-			};
+			p.needs_lf = fragment[l-1] == '\r';
+			let end = if (p.needs_lf) l-1 else l;
+			append(p.buf, fragment[..end]...)!;
 			return more;
 		case let b: u8 =>
 			if (b != '\n') {
@@ -222,6 +223,8 @@ fn next_header(p: *parser) (void | error) = {
 		// specification
 		return;
 	};
+
+	return malformed_header;
 };
 
 export fn message_finish(m: message) void = {

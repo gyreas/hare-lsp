@@ -13,6 +13,27 @@ fn pushs(m: *io::stream, s: str) void = {
 	io::seek(m, off, io::whence::SET)!;
 };
 
+@test fn garbage_at_start() void = {
+	let buf = memio::dynamic();
+	let p = newparser(&buf);
+
+	memio::reset(&buf);
+	pushs(&buf, "Content-Length: 1\r\n\r\np");
+	assert(next(&p) is message);
+
+	pushs(&buf, "this is garbage");
+	assert(next(&p) is (io::error | error));
+};
+
+@test fn garbage_header() void = {
+	let buf = memio::dynamic();
+	let p = newparser(&buf);
+
+	memio::reset(&buf);
+	pushs(&buf, "Content-Long: 1\r\n\r\np");
+	assert(next(&p) is (io::error | error));
+};
+
 @test fn multi_try_parse() void = {
 	let buf = memio::dynamic();
 	let p = newparser(&buf);
