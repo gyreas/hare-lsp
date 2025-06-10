@@ -10,6 +10,7 @@ use rt;
 use strings;
 
 export type state = struct {
+	server: lsp::server,
 	client: client,
 };
 
@@ -24,11 +25,13 @@ export fn main() void = {
 		revents = -1,
 	}];
 
-	let c = newclient(pfds[0].fd, &pfds[0], pfds[1].fd, &pfds[1]);
-	c.server = newlspserver(&c);
-
 	let s = state {
-		client = c,
+		server = lsp::server {
+			vtable = &server_vt,
+			initialized = false,
+			shutdown = false,
+		},
+		client = newclient(&pfds[0], &pfds[1]),
 	};
 
 	for (true) {
@@ -38,7 +41,7 @@ export fn main() void = {
 		case int => void;
 		};
 
-		match (dispatch_client(&s.client)) {
+		match (dispatch_client(&s)) {
 		case let m: client_error =>
 			fmt::errorfln("client had an error: {}", m: str)!;
 		case => void;
@@ -48,8 +51,10 @@ export fn main() void = {
 
 type client_error = !str;
 
-fn dispatch_client(client: *client) (void | client_error) = {
-	if ((client.inpolld.revents & rt::POLLIN) != rt::POLLIN) {
+fn dispatch_client(s: *state) (void | client_error) = {
+	let client = &s.client;
+
+	if ((client.in.revents & rt::POLLIN) != rt::POLLIN) {
 		return;
 	};
 
@@ -70,14 +75,14 @@ fn dispatch_client(client: *client) (void | client_error) = {
 	case let e: rpc::error =>
 		fmt::fatalf("rpc::error: {}", e.message);
 	case let req: rpc::request =>
-		match (lsp::serve_request(&client.server, req)) {
+		match (lsp::serve_request(&s.server, req)) {
 		case let e: lsp::error =>
 			fmt::fatalf("rpc::error: {}", e.message);
 		case let r: rpc::response =>
 			send_response(client, &r);
 		};
 	case let not: rpc::notification =>
-		match (lsp::serve_notification(&client.server, not)) {
+		match (lsp::serve_notification(&s.server, not)) {
 		case let e: lsp::error =>
 			fmt::fatalf("rpc::error: {}", e.message);
 		case => void;
@@ -94,5 +99,5 @@ fn send_response(client: *client, r: *rpc::response) void = {
 
 	// TODO: (non)blocking writes separation
 	// doing: blocking write here
-	proto::write(client.out, &m)!;
+	proto::write(client.out.fd, &m)!;
 };

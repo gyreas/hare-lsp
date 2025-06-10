@@ -19,20 +19,6 @@ const server_vt = lsp::vtable {
 	text_document_did_open   = &handle_did_open,
 };
 
-export type lspserver = struct {
-	server: lsp::server,
-
-	client: *client,
-};
-
-export fn newlspserver(client: *client) lspserver = lspserver {
-	server = lsp::server {
-		vtable = &server_vt,
-		...
-	},
-	client = client,
-};
-
 fn handle_initialize(s: *lsp::server, params: *lsp::initialize_params) (lsp::initialize_result | lsp::error) = {
 	return lsp::initialize_result {
 		capabilities = lsp::server_capabilities {
