@@ -86,154 +86,127 @@ export type vtable = struct {
 	text_document_did_open: nullable *text_document_did_open,
 };
 
-// export fn serve_notification(s: *server, notif: rpc::notification) (void | error) = {
-// 	match (_serve_notification(s, notif)) {
-// 	case let result: (void | error) =>
-// 		return result;
-// 	case unmarshalerr =>
-// 		return rpc::error {
-// 			code = rpc::INVALID_PARAMS,
-// 			message = "Invalid params",
-// 			data = void,
-// 		};
-// 	};
-// };
+export fn serve_notification(s: *server, notif: rpc::notification) (void | error) = {
+	match (_serve_notification(s, notif)) {
+	case let result: (void | error) =>
+		return result;
+	case deserialize_error =>
+		return rpc::error {
+			code = rpc::INVALID_PARAMS,
+			message = "Invalid params",
+			data = void,
+		};
+	};
+};
 
-// fn _serve_notification(s: *server, notif: rpc::notification) (void | unmarshalerr | error) = {
-// 	// Drop all notifications except exit notifications
-// 	if (!s.initialized && notif.method != "exit") {
-// 		return;
-// 	};
+fn _serve_notification(s: *server, notif: rpc::notification) (void | deserialize_error | error) = {
+	// Drop all notifications except exit notifications
+	if (!s.initialized && notif.method != "exit") {
+		return;
+	};
+	let params = getobj(notif.params)?;
+	switch (notif.method) {
+	case "exit" =>
+		return s.vtable.exit(s);
+	case "initialized" =>
+		match (s.vtable.initialized) {
+		case *initialized =>
+			return serve_initialized(s, params)?;
+		case null => return;
+		};
+	case "textDocument/didChange" =>
+		match (s.vtable.text_document_did_change) {
+		case *text_document_did_change =>
+			return serve_text_document_did_change(s, params)?;
+		case null => return;
+		};
+	case "textDocument/didClose" =>
+		match (s.vtable.text_document_did_close) {
+		case *text_document_did_close =>
+			return serve_text_document_did_close(s, params)?;
+		case null => return;
+		};
+	case "textDocument/didOpen" =>
+		match (s.vtable.text_document_did_open) {
+		case *text_document_did_open =>
+			return serve_text_document_did_open(s, params)?;
+		case null => return;
+		};
+	case =>
+		return rpc::error {
+			code = rpc::METHOD_NOT_FOUND,
+			message = fmt::asprintf("Method not found: '{}'", notif.method)!,
+			data = void,
+		};
+	};
+};
 
-// 	if (notif.method == "exit") {
-// 		return s.vtable.exit(s);
-// 	};
+export fn serve_request(s: *server, req: rpc::request) (rpc::response | error) = {
+	match (_serve_request(s, req)) {
+	case let result: (rpc::response | error) =>
+		return result;
+	case deserialize_error =>
+		return rpc::error {
+			code = rpc::INVALID_PARAMS,
+			message = "Invalid params",
+			data = void,
+		};
+	};
+};
 
-// 	if (notif.method == "initialized") {
-// 		match (s.vtable.initialized) {
-// 		case *initialized =>
-// 			return serve_initialized(s, getobj(notif.params)?)?;
-// 		case null => void;
-// 		};
-// 	};
+fn _serve_request(s: *server, req: rpc::request) (rpc::response | deserialize_error | error) = {
+	if (!s.initialized) {
+		if (req.method != "initialize") {
+			return rpc::error {
+				code = proto::SERVER_NOT_INITIALIZED,
+				message = "Server not initialized",
+				data = void,
+			};
+		};
 
-// 	if (notif.method == "textDocument/didChange") {
-// 		match (s.vtable.text_document_did_change) {
-// 		case *text_document_did_change =>
-// 			return serve_text_document_did_change(s, getobj(notif.params)?)?;
-// 		case null => void;
-// 		};
-// 	};
+		const result = serve_initialize(s, getobj(req.params)?)?;
+		s.initialized = true;
+		return to_response(req, result);
+	};
 
-// 	if (notif.method == "textDocument/didClose") {
-// 		match (s.vtable.text_document_did_close) {
-// 		case *text_document_did_close =>
-// 			return serve_text_document_did_close(s, getobj(notif.params)?)?;
-// 		case null => void;
-// 		};
-// 	};
+	if (s.shutdown) {
+		return rpc::error {
+			code = rpc::INVALID_REQUEST,
+			message = "Server is shutdown",
+			data = void,
+		};
+	};
 
-// 	if (notif.method == "textDocument/didOpen") {
-// 		match (s.vtable.text_document_did_open) {
-// 		case *text_document_did_open =>
-// 			return serve_text_document_did_open(s, getobj(notif.params)?)?;
-// 		case null => void;
-// 		};
-// 	};
+	if (req.method == "initialize") {
+		// Does not seem to be specified in the spec so let's just
+		// return an error
+		return rpc::error {
+			code = rpc::INVALID_REQUEST,
+			message = "Server is already initialized",
+			data = void,
+		};
+	};
 
-// 	return rpc::error {
-// 		code = rpc::METHOD_NOT_FOUND,
-// 		message = "Method not found",
-// 		data = void,
-// 	};
-// };
+	if (req.method == "shutdown") {
+		s.shutdown = true;
+		s.vtable.shutdown(s)?;
+		return to_response(req, json::_null);
+	};
 
-// export fn serve_request(s: *server, req: rpc::request) (rpc::response | error) = {
-// 	match (_serve_request(s, req)) {
-// 	case let result: (rpc::response | error) =>
-// 		return result;
-// 	case unmarshalerr =>
-// 		return rpc::error {
-// 			code = rpc::INVALID_PARAMS,
-// 			message = "Invalid params",
-// 			data = void,
-// 		};
-// 	};
-// };
+	return rpc::error {
+		code = rpc::METHOD_NOT_FOUND,
+		message = fmt::asprintf("Method not found: '{}'", req.method)!,
+		data = void,
+	};
+};
 
-// fn _serve_request(s: *server, req: rpc::request) (rpc::response | unmarshalerr | error) = {
-// 	if (!s.initialized) {
-// 		if (req.method != "initialize") {
-// 			return rpc::error {
-// 				code = protocol::SERVER_NOT_INITIALIZED,
-// 				message = "Server not initialized",
-// 				data = void,
-// 			};
-// 		};
+fn serve_initialize(s: *server, params: json::object) (json::object | deserialize_error | error) = {
+	const params = deserialize_initialize_params(&params)?;
+	const result = s.vtable.initialize(s, &params)?;
+	return serialize_initialize_result(&result);
+};
 
-// 		const result = serve_initialize(s, getobj(req.params)?)?;
-// 		s.initialized = true;
-// 		return to_response(req, result);
-// 	};
-
-// 	if (s.shutdown) {
-// 		return rpc::error {
-// 			code = rpc::INVALID_REQUEST,
-// 			message = "Server is shutdown",
-// 			data = void,
-// 		};
-// 	};
-
-// 	if (req.method == "initialize") {
-// 		// Does not seem to be specified in the spec so let's just
-// 		// return an error
-// 		return rpc::error {
-// 			code = rpc::INVALID_REQUEST,
-// 			message = "Server is already initialized",
-// 			data = void,
-// 		};
-// 	};
-
-// 	if (req.method == "textDocument/definition") {
-// 		match (s.vtable.text_document_definition) {
-// 		case *text_document_definition =>
-// 			const result = serve_text_document_definition(s, getobj(req.params)?)?;
-// 			return to_response(req, result);
-// 		case null => void;
-// 		};
-
-// 	};
-
-// 	if (req.method == "textDocument/hover") {
-// 		match (s.vtable.text_document_hover) {
-// 		case *text_document_hover =>
-// 			const result = serve_text_document_hover(s, getobj(req.params)?)?;
-// 			return to_response(req, result);
-// 		case null => void;
-// 		};
-
-// 	};
-
-// 	if (req.method == "shutdown") {
-// 		s.shutdown = true;
-// 		s.vtable.shutdown(s)?;
-// 		return to_response(req, json::_null);
-// 	};
-
-// 	return rpc::error {
-// 		code = rpc::METHOD_NOT_FOUND,
-// 		message = "Method not found",
-// 		data = void,
-// 	};
-// };
-
-// fn serve_initialize(s: *server, params: json::object) (json::object | unmarshalerr | error) = {
-// 	const params = unmarshal_initialize_params(&params)?;
-// 	const result = s.vtable.initialize(s, &params)?;
-// 	return marshal_initialize_result(&result);
-// };
-
-// fn serve_text_document_definition(s: *server, params: json::object) (json::object | json::_null | unmarshalerr | error) = {
+// fn serve_text_document_definition(s: *server, params: json::object) (json::object | json::_null | deserialize_error | error) = {
 // 	const handler = s.vtable.text_document_definition as *text_document_definition;
 // 	const params = unmarshal_text_document_position_params(&params)?;
 // 	match (handler(s, &params)?) {
@@ -244,7 +217,7 @@ export type vtable = struct {
 // 	};
 // };
 
-// fn serve_text_document_hover(s: *server, params: json::object) (json::object | json::_null | unmarshalerr | error) = {
+// fn serve_text_document_hover(s: *server, params: json::object) (json::object | json::_null | deserialize_error | error) = {
 // 	const handler = s.vtable.text_document_hover as *text_document_hover;
 // 	const params = unmarshal_hover_params(&params)?;
 // 	match (handler(s, &params)?) {
@@ -255,47 +228,47 @@ export type vtable = struct {
 // 	};
 // };
 
-// fn serve_initialized(s: *server, params: json::object) (void | unmarshalerr | error) = {
-// 	const handler = s.vtable.initialized as *initialized;
-// 	let params = unmarshal_initialized_params(&params)?;
-// 	return handler(s, &params);
-// };
+fn serve_initialized(s: *server, params: json::object) (void | deserialize_error | error) = {
+	const handler = s.vtable.initialized as *initialized;
+	let params = deserialize_initialized_params(&params)?;
+	return handler(s, &params);
+};
 
-// fn serve_text_document_did_change(s: *server, params: json::object) (void | unmarshalerr | error) = {
-// 	const handler = s.vtable.text_document_did_change as *text_document_did_change;
-// 	const params = unmarshal_did_change_text_params(&params)?;
-// 	return handler(s, &params);
-// };
+fn serve_text_document_did_change(s: *server, params: json::object) (void | deserialize_error | error) = {
+	const handler = s.vtable.text_document_did_change as *text_document_did_change;
+	const params = deserialize_did_change_text_params(&params)?;
+	return handler(s, &params);
+};
 
-// fn serve_text_document_did_close(s: *server, params: json::object) (void | unmarshalerr | error) = {
-// 	const handler = s.vtable.text_document_did_close as *text_document_did_close;
-// 	const params = unmarshal_did_close_text_params(&params)?;
-// 	return handler(s, &params);
-// };
+fn serve_text_document_did_close(s: *server, params: json::object) (void | deserialize_error | error) = {
+	const handler = s.vtable.text_document_did_close as *text_document_did_close;
+	const params = deserialize_did_close_text_params(&params)?;
+	return handler(s, &params);
+};
 
-// fn serve_text_document_did_open(s: *server, params: json::object) (void | unmarshalerr | error) = {
-// 	const handler = s.vtable.text_document_did_open as *text_document_did_open;
-// 	const params = unmarshal_did_open_text_params(&params)?;
-// 	return handler(s, &params);
-// };
+fn serve_text_document_did_open(s: *server, params: json::object) (void | deserialize_error | error) = {
+	const handler = s.vtable.text_document_did_open as *text_document_did_open;
+	const params = deserialize_did_open_text_params(&params)?;
+	return handler(s, &params);
+};
 
-// fn to_response(req: rpc::request, result: (json::object | json::_null)) rpc::response = {
-// 	return rpc::response {
-// 		id = req.id,
-// 		result = result,
-// 		error = void,
-// 	};
-// };
+fn to_response(req: rpc::request, result: (json::object | json::_null)) rpc::response = {
+	return rpc::response {
+		id = req.id,
+		result = result,
+		error = void,
+	};
+};
 
-// fn getobj(val: ([]json::value | json::object | void)) (json::object | error) = {
-// 	match (val) {
-// 	case let obj: json::object =>
-// 		return obj;
-// 	case =>
-// 		return rpc::error {
-// 			code = rpc::INVALID_PARAMS,
-// 			message = "Invalid params",
-// 			data = void,
-// 		};
-// 	};
-// };
+fn getobj(val: ([]json::value | json::object | void)) (json::object | error) = {
+	match (val) {
+	case let obj: json::object =>
+		return obj;
+	case =>
+		return rpc::error {
+			code = rpc::INVALID_PARAMS,
+			message = "Invalid params",
+			data = void,
+		};
+	};
+};
