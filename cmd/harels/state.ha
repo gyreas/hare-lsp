@@ -28,8 +28,7 @@ type state = struct {
 	project_root: uri::uri,
 };
 
-fn newstate(in: *rt::pollfd, out: *rt::pollfd) state = state {
-	project_root = uri::parse("file://root")!,
+fn newstate(in: *rt::pollfd, out: *rt::pollfd, workspace_root: uri::uri) state = state {
 	server = lsp::server {
 		vtable = &server_vt,
 		initialized = false,
@@ -38,32 +37,13 @@ fn newstate(in: *rt::pollfd, out: *rt::pollfd) state = state {
 	in = in,
 	out = out,
 	parser = proto::newparser(in.fd),
+	project_root = workspace_root,
 };
 
 fn handle_initialize(s: *lsp::server, params: *lsp::initialize_params) (lsp::initialize_result | lsp::error) = {
 	let s = s: *state;
 
-	let hasroot = false;
-	if (!(params.workspace_folders is void)) {
-		let wsf = params.workspace_folders as []lsp::workspace_folder;
-		if (len(wsf) > 0) {
-			s.project_root = wsf[0].uri;
-			hasroot = true;
-		};
-	} else if (!(params.root_uri is void)) {
-		s.project_root = params.root_uri as uri::uri;
-		hasroot = true;
-	} else if (!(params.root_path is void)) {
-		match (params.root_path as (str | json::_null)) {
-		case json::_null => void;
-		case let rp: str =>
-			s.project_root = uri::parse(rp)!;
-			hasroot = true;
-		};
-	};
-	if (!hasroot) {
-		s.project_root = uri::parse(os::getcwd())!;
-	};
+	s.project_root = project_getroot(params);
 
 	loginfo("(initialize) workspace root is '{}'", uri::string(&s.project_root)!);
 
@@ -79,6 +59,35 @@ fn handle_initialize(s: *lsp::server, params: *lsp::initialize_params) (lsp::ini
 			version = "",
 		},
 	};
+};
+
+fn project_getroot(params: *lsp::initialize_params) uri::uri = {
+	let root: (uri::uri | void) = match (params.workspace_folders) {
+	case let wsf: []lsp::workspace_folder =>
+		yield if (len(wsf) > 0) {
+			yield wsf[0].uri;
+		};
+	case void =>
+		let u = match (params.root_uri) {
+		case let u: uri::uri =>
+			yield u;
+		case void =>
+			yield void;
+		};
+
+		match (params.root_path) {
+		case (json::_null | void) =>
+			u = void;
+		case let rp: str =>
+			u = uri::parse(rp)!;
+		};
+		yield u;
+	};
+
+	if (root is void) {
+		return uri::parse(os::getcwd())!;
+	};
+	return root as uri::uri;
 };
 
 fn handle_shutdown(s: *lsp::server) (void | lsp::error) = {

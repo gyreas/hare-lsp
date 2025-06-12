@@ -169,7 +169,7 @@ fn _serve_request(s: *server, req: rpc::request) (rpc::response | deserialize_er
 
 		const result = serve_initialize(s, getobj(req.params)?)?;
 		s.initialized = true;
-		return to_response(req, result);
+		return to_response(req.id, result);
 	};
 
 	if (s.shutdown) {
@@ -193,7 +193,7 @@ fn _serve_request(s: *server, req: rpc::request) (rpc::response | deserialize_er
 	if (req.method == "shutdown") {
 		s.shutdown = true;
 		s.vtable.shutdown(s)?;
-		return to_response(req, json::_null);
+		return to_response(req.id, json::_null);
 	};
 
 	return rpc::error {
@@ -255,15 +255,15 @@ fn serve_text_document_did_open(s: *server, params: json::object) (void | deseri
 	return handler(s, &params);
 };
 
-fn to_response(req: rpc::request, result: (json::object | json::_null)) rpc::response = {
+export fn to_response(reqid: (i32 | str), result: (json::object | json::_null)) rpc::response = {
 	return rpc::response {
-		id = req.id,
+		id = reqid,
 		result = result,
 		error = void,
 	};
 };
 
-fn getobj(val: ([]json::value | json::object | void)) (json::object | error) = {
+export fn getobj(val: ([]json::value | json::object | void)) (json::object | error) = {
 	match (val) {
 	case let obj: json::object =>
 		return obj;
