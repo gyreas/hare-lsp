@@ -20,7 +20,7 @@ export fn main() void = {
 		revents = -1,
 	}];
 
-	let p = proto::newparser(os::stdin);
+	let p = proto::newparser(os::stdin_file);
 
 	let (initialize_id, initialize_params) = initialize_begin(&p)!;
 	let workspace_root = project_getroot(&initialize_params);

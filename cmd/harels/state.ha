@@ -6,6 +6,7 @@ use lsp;
 use net::uri;
 use os;
 use rt;
+use vfs::overlay;
 
 const server_vt = lsp::vtable {
 	initialize               = &handle_initialize,
@@ -25,6 +26,7 @@ type state = struct {
 	in: *rt::pollfd,
 	out: *rt::pollfd,
 	parser: proto::parser,
+	fs: overlay::overlayfs,
 	project_root: uri::uri,
 };
 
@@ -38,6 +40,7 @@ fn newstate(in: *rt::pollfd, out: *rt::pollfd, workspace_root: uri::uri) state =
 	out = out,
 	parser = proto::newparser(in.fd),
 	project_root = workspace_root,
+	fs = overlay::new("/tmp", uri::string(&workspace_root)!),
 };
 
 fn handle_initialize(s: *lsp::server, params: *lsp::initialize_params) (lsp::initialize_result | lsp::error) = {
