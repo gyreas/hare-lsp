@@ -40,27 +40,6 @@ fn newstate(in: *rt::pollfd, out: *rt::pollfd, workspace_root: uri::uri) state =
 	fs = overlay::new("/tmp", uri::string(&workspace_root)!),
 };
 
-fn handle_initialize(s: *lsp::server, params: *lsp::initialize_params) (lsp::initialize_result | lsp::error) = {
-	let s = s: *state;
-
-	s.project_root = project_getroot(params);
-
-	loginfo("(initialize) workspace root is '{}'", uri::string(&s.project_root)!);
-
-	return lsp::initialize_result {
-		capabilities = lsp::server_capabilities {
-			position_encoding = lsp::POS_ENC_UTF16,
-			text_document_sync = void,
-			definition_provider = void,
-			hover_provider = void,
-		},
-		server_info = lsp::server_info {
-			name = "harels",
-			version = "",
-		},
-	};
-};
-
 fn project_getroot(params: *lsp::initialize_params) uri::uri = {
 	let root: (uri::uri | void) = match (params.workspace_folders) {
 	case let wsf: []lsp::workspace_folder =>
@@ -99,10 +78,6 @@ fn handle_exit(s: *lsp::server) void = {
 	loginfo("(server exited)");
 	let code = *(&!s.shutdown: uintptr: *int);
 	os::exit(code);
-};
-
-fn handle_initialized(s: *lsp::server, params: *lsp::initialized_params) (void | lsp::error) = {
-	return;
 };
 
 fn handle_did_change(s: *lsp::server, params: *lsp::did_change_text_params) (void | lsp::error) = {
