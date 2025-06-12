@@ -5,8 +5,6 @@ use rpc;
 
 export type error = !rpc::error;
 
-export type initialize = fn (s: *server, params: *initialize_params) (initialize_result | error);
-
 // requests
 export type shutdown = fn (s: *server) (void | error);
 export type text_document_definition = fn (s: *server, params: *text_document_position_params) (location | void | error);
@@ -14,21 +12,16 @@ export type text_document_hover = fn (s: *server, params: *hover_params) (hover 
 
 // notifications
 export type exit = fn (s: *server) void;
-export type initialized = fn (s: *server, params: *initialized_params) (void | error);
 export type text_document_did_change = fn (s: *server, params: *did_change_text_params) (void | error);
 export type text_document_did_close = fn (s: *server, params: *did_close_text_params) (void | error);
 export type text_document_did_open = fn (s: *server, params: *did_open_text_params) (void | error);
 
 export type server = struct {
 	vtable: *vtable,
-
-	initialized: bool,
 	shutdown: bool,
 };
 
 export type vtable = struct {
-	initialize: *initialize,
-
 	// requests
 
 	// The shutdown request is sent from the client to the server. It asks
@@ -55,16 +48,6 @@ export type vtable = struct {
 	// should exit with success code 0 if the shutdown request has been
 	// received before; otherwise with error code 1.
 	exit: *exit,
-
-	// The initialized notification is sent from the client to the server
-	// after the client received the result of the initialize request but
-	// before the client is sending any other request or notification to the
-	// server. The server can use the initialized notification for example
-	// to dynamically register capabilities. The initialized notification
-	// may only be sent once.
-	// More info here:
-	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#initialized
-	initialized: nullable *initialized,
 
 	// Signals the LSP server that this file has changed. This contains the
 	// updated content of the file. You MUST make sure to have received a
@@ -101,7 +84,7 @@ export fn serve_notification(s: *server, notif: rpc::notification) (void | error
 
 fn _serve_notification(s: *server, notif: rpc::notification) (void | deserialize_error | error) = {
 	// Drop all notifications except exit notifications
-	if (!s.initialized && notif.method != "exit") {
+	if (notif.method != "exit") {
 		return;
 	};
 
@@ -111,12 +94,6 @@ fn _serve_notification(s: *server, notif: rpc::notification) (void | deserialize
 
 	let params = getobj(notif.params)?;
 	switch (notif.method) {
-	case "initialized" =>
-		match (s.vtable.initialized) {
-		case *initialized =>
-			return serve_initialized(s, params)?;
-		case null => return;
-		};
 	case "textDocument/didChange" =>
 		match (s.vtable.text_document_did_change) {
 		case *text_document_did_change =>
@@ -158,20 +135,6 @@ export fn serve_request(s: *server, req: rpc::request) (rpc::response | error) =
 };
 
 fn _serve_request(s: *server, req: rpc::request) (rpc::response | deserialize_error | error) = {
-	if (!s.initialized) {
-		if (req.method != "initialize") {
-			return rpc::error {
-				code = proto::SERVER_NOT_INITIALIZED,
-				message = "Server not initialized",
-				data = void,
-			};
-		};
-
-		const result = serve_initialize(s, getobj(req.params)?)?;
-		s.initialized = true;
-		return to_response(req.id, result);
-	};
-
 	if (s.shutdown) {
 		return rpc::error {
 			code = rpc::INVALID_REQUEST,
@@ -203,12 +166,6 @@ fn _serve_request(s: *server, req: rpc::request) (rpc::response | deserialize_er
 	};
 };
 
-fn serve_initialize(s: *server, params: json::object) (json::object | deserialize_error | error) = {
-	const params = deserialize_initialize_params(&params)?;
-	const result = s.vtable.initialize(s, &params)?;
-	return serialize_initialize_result(&result);
-};
-
 // fn serve_text_document_definition(s: *server, params: json::object) (json::object | json::_null | deserialize_error | error) = {
 // 	const handler = s.vtable.text_document_definition as *text_document_definition;
 // 	const params = unmarshal_text_document_position_params(&params)?;
@@ -230,12 +187,6 @@ fn serve_initialize(s: *server, params: json::object) (json::object | deserializ
 // 		return json::_null;
 // 	};
 // };
-
-fn serve_initialized(s: *server, params: json::object) (void | deserialize_error | error) = {
-	const handler = s.vtable.initialized as *initialized;
-	let params = deserialize_initialized_params(&params)?;
-	return handler(s, &params);
-};
 
 fn serve_text_document_did_change(s: *server, params: json::object) (void | deserialize_error | error) = {
 	const handler = s.vtable.text_document_did_change as *text_document_did_change;

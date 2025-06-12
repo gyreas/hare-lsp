@@ -9,9 +9,7 @@ use rt;
 use vfs::overlay;
 
 const server_vt = lsp::vtable {
-	initialize               = &handle_initialize,
 	shutdown                 = &handle_shutdown,
-	initialized              = &handle_initialized,
 	exit                     = &handle_exit,
 
 	text_document_definition = null,
@@ -33,7 +31,6 @@ type state = struct {
 fn newstate(in: *rt::pollfd, out: *rt::pollfd, workspace_root: uri::uri) state = state {
 	server = lsp::server {
 		vtable = &server_vt,
-		initialized = false,
 		shutdown = false,
 	},
 	in = in,

@@ -26,9 +26,7 @@ export fn main() void = {
 	let workspace_root = project_getroot(&initialize_params);
 	initialize_end(&p, initialize_id);
 
-	// make this less crazy
 	let s = newstate(&pfds[0], &pfds[1], workspace_root);
-	s.server.initialized = true;
 
 	for (true) {
 		match (rt::poll(&pfds, len(pfds), -1)) {
