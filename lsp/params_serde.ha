@@ -54,8 +54,8 @@ export fn deserialize_initialize_params(obj: *json::object) (initialize_params |
 
 	let root_path: (str | json::_null | void) = void;
 	let root_uri: (uri::uri | void) = void;
-	const ws_folders = match (tryarray(obj, "workspaceFolders")?) {
-	case void =>
+	const ws_folders = match (tryarraynull(obj, "workspaceFolders")?) {
+	case (void | json::_null) =>
 		match (trystrnull(obj, "rootUri")?) {
 		case void => root_path = trystrnull(obj, "rootPath")?;
 		case let ru: str => root_uri = uri::parse(ru)!;

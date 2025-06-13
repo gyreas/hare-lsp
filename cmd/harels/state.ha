@@ -64,7 +64,11 @@ fn project_getroot(params: *lsp::initialize_params) uri::uri = {
 	};
 
 	if (root is void) {
-		return uri::parse(os::getcwd())!;
+		root = uri::uri {
+			scheme = "file",
+			host = os::getcwd(),
+			...
+		};
 	};
 	return root as uri::uri;
 };
