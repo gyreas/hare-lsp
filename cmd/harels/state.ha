@@ -62,7 +62,11 @@ fn handle_initialize(s: *lsp::server, params: *lsp::initialize_params) (lsp::ini
 		};
 	};
 	if (!hasroot) {
-		s.project_root = uri::parse(os::getcwd())!;
+		s.project_root = uri::uri {
+			scheme = "file",
+			host = os::getcwd(),
+			...
+		};
 	};
 
 	loginfo("(initialize) workspace root is '{}'", uri::string(&s.project_root)!);

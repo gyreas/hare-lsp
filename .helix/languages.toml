@@ -1,0 +1,11 @@
+# [language-server.hx-lsp]
+# command = "hx-lsp"
+
+[language-server.harels]
+command = "./build/harels"
+
+[[language]]
+name = "hare"
+language-servers = [ "harels" ]
+# or only use choose features
+# language-servers = [ { name = "hx-lsp", only-features = [ "completion" ] }, "harels" ]

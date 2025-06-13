@@ -22,6 +22,21 @@ fn tryarray(obj: *json::object, key: str) ([]json::value | void | deserialize_er
 	};
 };
 
+fn tryarraynull(obj: *json::object, key: str) ([]json::value | json::_null | void | deserialize_error) = {
+	match (json::get(obj, key)) {
+	case let val: *json::value =>
+		match (*val) {
+		case let array: []json::value =>
+			return array;
+		case json::_null =>
+			return json::_null;
+		case =>
+			return stopbuggingmeerr;
+		};
+	case void => void;
+	};
+};
+
 fn getobject(obj: *json::object, key: str) (json::object | deserialize_error) = {
 	match (tryobject(obj, key)) {
 	case let obj: json::object =>

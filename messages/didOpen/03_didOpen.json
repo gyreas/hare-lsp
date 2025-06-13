@@ -1,0 +1,12 @@
+{
+  "jsonrpc": "2.0",
+  "method": "textDocument/didOpen",
+  "params": {
+    "textDocument": {
+      "uri": "file:///a-file-was-open.file",
+      "languageId": "hare",
+      "version": 0,
+      "text": "this is a text, so don't fret"
+    }
+  }
+}
