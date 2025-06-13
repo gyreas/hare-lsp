@@ -1,0 +1,7 @@
+Provides Virtual Filesystem implementations that conform to [[fs]] module.
+
+- OverlayFS:
+	A VFS that overlays on the current filesystem as a directory and serves files from there.
+
+TODO:
+- Implement a VFS that only implements the bare essentials without fully conforming to the [[fs]] interface

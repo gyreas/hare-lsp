@@ -6,6 +6,7 @@ use lsp;
 use net::uri;
 use os;
 use rt;
+use vfs::overlay;
 
 const server_vt = lsp::vtable {
 	initialize               = &handle_initialize,
@@ -25,6 +26,7 @@ type state = struct {
 	in: *rt::pollfd,
 	out: *rt::pollfd,
 	parser: proto::parser,
+	fs: overlay::overlayfs,
 	project_root: uri::uri,
 };
 

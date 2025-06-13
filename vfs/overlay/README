@@ -1,0 +1,13 @@
+The overlayfs module provides a [[fs::fs]] implementation that is composed of
+two filesystems: the underlay and the overlay. The overlay fs is writeable while
+the underlay is read-only. The overlayfs provides a single view.
+
+As an example, let the overlay be rooted at /tmp/overlay. Then,
+fs::create(overlayfs, "/path/to/file") will create a file at
+/tmp/overlay/path/to/file.
+
+This is currently used as an in memory store for files managed by the client
+through textDocument/didOpen, textDocument/didChange and textDocument/didClose
+notifications.
+
+This module is an experiment, unsure if it will be kept.
