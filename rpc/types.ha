@@ -175,6 +175,7 @@ export fn notification_serialize(req: *notification) json::object = {
 export fn response_serialize(res: *response) json::object = {
 	let o = json::newobject();
 
+	json::put(&o, "jsonrpc", JSONRPC_VERSION)!;
 	match (res.id) {
 	case let i: i32 => json::put(&o, "id", i: f64)!;
 	case let i: str => json::put(&o, "id", i)!;

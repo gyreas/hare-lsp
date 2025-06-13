@@ -78,7 +78,6 @@ fn dispatch_client(s: *state) (void | client_error) = {
 
 fn send_response(s: *state, r: *rpc::response) void = {
 	let rser = rpc::response_serialize(r);
-	defer json::finish(rser);
 
 	let m = proto::message_fromjson(rser);
 	defer proto::message_finish(m);
