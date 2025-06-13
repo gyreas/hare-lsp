@@ -83,6 +83,8 @@ export fn serve_notification(s: *server, notif: rpc::notification) (void | error
 };
 
 fn _serve_notification(s: *server, notif: rpc::notification) (void | deserialize_error | error) = {
+	fmt::errorfln("[RECV] method='{}'", notif.method)!;
+
 	// Drop all notifications except exit notifications
 	if (notif.method != "exit") {
 		return;

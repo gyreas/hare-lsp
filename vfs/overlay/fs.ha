@@ -100,7 +100,6 @@ fn mkdir(fs: *fs::fs, fpath: str, mode: fs::mode) (void | fs::error) = {
 
 	// Only overlay can be edited
 	const overlay_path = path(fs, fpath);
-	fmt::printfln("overlay_path={}", overlay_path)!;
 	return fs::mkdir(fs.under, overlay_path, mode);
 };
 

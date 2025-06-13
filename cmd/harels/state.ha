@@ -21,21 +21,17 @@ const server_vt = lsp::vtable {
 
 type state = struct {
 	server: lsp::server,
-	in: *rt::pollfd,
-	out: *rt::pollfd,
-	parser: proto::parser,
+	conn: connection,
 	fs: overlay::overlayfs,
 	project_root: uri::uri,
 };
 
-fn newstate(in: *rt::pollfd, out: *rt::pollfd, workspace_root: uri::uri) state = state {
+fn newstate(conn: connection, workspace_root: uri::uri) state = state {
 	server = lsp::server {
 		vtable = &server_vt,
 		shutdown = false,
 	},
-	in = in,
-	out = out,
-	parser = proto::newparser(in.fd),
+	conn = conn,
 	project_root = workspace_root,
 	fs = overlay::new("/tmp", uri::string(&workspace_root)!),
 };

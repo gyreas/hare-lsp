@@ -80,10 +80,8 @@ export fn next(p: *parser) (message | more | error | io::error) = {
 				p.needs_lf = false;
 				memio::appendrune(&p.ringb, '\n')!;
 			};
-		} else {
-			if (read_fragmented(p)? is more) {
-				return more;
-			};
+		} else if (read_fragmented(p)? is more) {
+			return more;
 		};
 
 		let b = memio::buffer(&p.ringb);
