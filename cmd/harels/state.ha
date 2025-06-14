@@ -1,11 +1,15 @@
 use encoding::json;
+use errors;
 use fmt;
+use fs;
 use io;
 use lsp::proto;
 use lsp;
 use net::uri;
 use os;
 use rt;
+use strings;
+use temp;
 use vfs::overlay;
 
 const server_vt = lsp::vtable {
@@ -26,14 +30,37 @@ type state = struct {
 	project_root: uri::uri,
 };
 
-fn newstate(conn: connection, workspace_root: uri::uri) state = state {
-	server = lsp::server {
-		vtable = &server_vt,
-		shutdown = false,
-	},
-	conn = conn,
-	project_root = workspace_root,
-	fs = overlay::new("/tmp", uri::string(&workspace_root)!),
+fn newstate(conn: connection, workspace_root: uri::uri) state = {
+	let root = path_fromuri(&workspace_root);
+	let tmpdir = ".underfs"; // strings::dup(temp::dir())!;
+
+	match (os::mkdir(tmpdir, 0o755)) {
+	case void => void;
+	case errors::exists => void;
+	case let e: fs::error =>
+		fmt::fatalf("error: {}", fs::strerror(e));
+	};
+
+
+	return state {
+		server = lsp::server {
+			vtable = &server_vt,
+			shutdown = false,
+		},
+		conn = conn,
+		project_root = workspace_root,
+		fs = overlay::new(tmpdir, root),
+	};
+};
+
+fn path_fromuri(uri: *uri::uri) str = {
+	assert(uri.scheme == "file", "only the 'file' is currently supported");
+	match (uri.host) {
+	case let h: str =>
+		fmt::errorfln("[uri.path = {}], [uri.host = {}]", uri.path, h)!;
+		return uri.path;
+	case => abort("unimplemented");
+	};
 };
 
 fn project_getroot(params: *lsp::initialize_params) uri::uri = {
@@ -50,10 +77,8 @@ fn project_getroot(params: *lsp::initialize_params) uri::uri = {
 			yield void;
 		};
 
-		match (params.root_path) {
-		case (json::_null | void) =>
-			u = void;
-		case let rp: str =>
+		if (params.root_path is str) {
+			let rp = params.root_path as str;
 			u = uri::parse(rp)!;
 		};
 		yield u;
@@ -62,7 +87,8 @@ fn project_getroot(params: *lsp::initialize_params) uri::uri = {
 	if (root is void) {
 		root = uri::uri {
 			scheme = "file",
-			host = os::getcwd(),
+			host = "",
+			path = os::getcwd(),
 			...
 		};
 	};

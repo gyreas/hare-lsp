@@ -86,10 +86,6 @@ fn _serve_notification(s: *server, notif: rpc::notification) (void | deserialize
 	fmt::errorfln("[RECV] method='{}'", notif.method)!;
 
 	// Drop all notifications except exit notifications
-	if (notif.method != "exit") {
-		return;
-	};
-
 	if (notif.method == "exit") {
 		return s.vtable.exit(s);
 	};

@@ -33,9 +33,22 @@ export fn new(under_cwd: str, over_path: str) overlayfs = {
 	case let u: *fs::fs =>
 		yield u;
 	case let e: fs::error =>
-		fmt::errorfln("error: {}", fs::strerror(e))!;
-		abort("Unreachable");
+		fmt::fatalf("error: {}", fs::strerror(e));
 	};
+
+	let opath = over_path;
+	if (path::abs(over_path)) {
+		// remove '/' so that we don't get something like: under_cwd/under_cwd/over_path...
+		opath = strings::sub(over_path, 1, strings::end);
+	};
+
+	fmt::errorfln("creating overpath: '{}'", opath)!;
+	match (fs::mkdirs(under, opath, 0o755)) {
+	case let e: fs::error =>
+		fmt::fatalf("error: {}", fs::strerror(e));
+	case void => void;
+	};
+
 	return overlayfs {
 		fs = vt,
 		under = under,
@@ -89,6 +102,7 @@ fn remove(fs: *fs::fs, fpath: str) (void | fs::error) = {
 
 fn create(fs: *fs::fs, fpath: str, mode: fs::mode, flag: fs::flag) (io::handle | fs::error) = {
 	let fs = fs: *overlayfs;
+	fmt::errorln("[CREATE]")!;
 
 	// Only overlay can be edited
 	const overlay_path = path(fs, fpath);
@@ -150,11 +164,21 @@ fn readlink(fs: *fs::fs, fpath: str) (str | fs::error) = {
 };
 
 fn path(fs: *overlayfs, fpath: str) str = {
-	static let buf = path::buffer { ... };
-	// I'm using this without extra processing since fs:: functions take the fs as
-	// argument, thus it already has the rootest path on it, somewhat
-	path::set(&buf, fs.over_path, fpath)!;
-	return path::string(&buf);
+	if (!path::abs(fpath)) {
+		fmt::errorfln("We're expecting the client to resolve resources to their absolute locations, '{}'", fpath)!;
+		abort();
+	};
+	let dirname = path::dirname(fpath);
+	if (dirname != fs.over_path) {
+		fmt::errorfln("Paths must be relative to the workspace root. want '{}', got '{}'", fs.over_path, dirname)!;
+		abort();
+	};
+
+	// remove '/' so that we don't get something like: under_cwd/under_cwd/over_path...
+	let p = strings::sub(fpath, 1, strings::end);
+	fmt::errorfln("[OVERLAY] resolved path = '{}'", p)!;
+
+	return p;
 };
 
 // @test fn overlayfs() void = {

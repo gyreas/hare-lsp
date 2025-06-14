@@ -40,7 +40,7 @@ async def test_didOpen(client: LanguageClient):
     client.text_document_did_open(
         params=DidOpenTextDocumentParams(
             text_document=TextDocumentItem(
-                uri="file://a-file-that-must-not-be-named.file",
+                uri="file:///home/saed/Projects/hare-lsp/a-file-that-must-not-be-named.file",
                 language_id="hare",
                 text="just a file, really",
                 version=0,
