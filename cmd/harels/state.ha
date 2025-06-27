@@ -35,7 +35,7 @@ type state = struct {
 
 fn newstate(conn: connection, workspace_root: uri::uri) state = {
 	let root = paths::fromuri(&workspace_root);
-	// fmt::errorfln("workspace root = {}", root)!;
+	loginfo("workspace root = {}", root);
 
 	return state {
 		server = lsp::server {
@@ -50,24 +50,18 @@ fn newstate(conn: connection, workspace_root: uri::uri) state = {
 };
 
 fn project_getroot(params: *lsp::initialize_params) uri::uri = {
-	let root: (uri::uri | void) = match (params.workspace_folders) {
+	let root: (uri::uri | void) = void;
+	match (params.workspace_folders) {
 	case let wsf: []lsp::workspace_folder =>
-		yield if (len(wsf) > 0) {
-			yield wsf[0].uri;
+		if (len(wsf) > 0) {
+			root = wsf[0].uri;
 		};
 	case void =>
-		let u = match (params.root_uri) {
-		case let u: uri::uri =>
-			yield u;
-		case void =>
-			yield void;
-		};
-
+		root = params.root_uri;
 		if (params.root_path is str) {
 			let rp = params.root_path as str;
-			u = uri::parse(rp)!;
+			root = uri::parse(rp)!;
 		};
-		yield u;
 	};
 
 	if (root is void) {

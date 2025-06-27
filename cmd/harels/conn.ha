@@ -41,7 +41,6 @@ fn newconn() connection = connection {
 // blocks until there's a (full) message, and returns it
 fn recv(conn: *connection) proto::message = {
 	let pfds = [conn.receiver, conn.sender];
-	// make_non_blocking(conn.receiver.fd);
 
 	for (true) {
 		match (rt::poll(&pfds, len(pfds), -1)) {

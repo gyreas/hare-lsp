@@ -23,13 +23,13 @@ export fn main() void = {
 	for (true) {
 		match (rt::poll(&pfds, len(pfds), -1)) {
 		case let e: rt::errno =>
-			fmt::fatalf("error: {}", rt::strerror(e));
+			logerr("error: {}", rt::strerror(e));
 		case int => void;
 		};
 
 		match (dispatch_one(&s)) {
 		case let m: client_error =>
-			fmt::errorfln("client had an error: {}", m: str)!;
+			logerr("client had an error: {}", m: str);
 		case => void;
 		};
 	};
