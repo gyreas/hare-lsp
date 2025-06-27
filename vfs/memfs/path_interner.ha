@@ -15,8 +15,8 @@ export type pathinterner = struct {
 	count: size,
 };
 
-export fn pi_finish(im: *pathinterner) void = {
-	for (let bucket .. im.buckets) {
+export fn pi_finish(pi: *pathinterner) void = {
+	for (let bucket .. pi.buckets) {
 		for (let vpath .. bucket) match (vpath.path) {
 		case let s: str => free(s);
 		case => void;
@@ -31,10 +31,10 @@ fn indexfrom(buckidx: size, keyidx: size) fileid =
 fn hash(key: *vfspath) size =
 	fnv::string(vfspath_string(key));
 
-export fn pi_get(im: *pathinterner, key: *vfspath) (fileid | void) = {
+export fn pi_get(pi: *pathinterner, key: *vfspath) (fileid | void) = {
 	const h = hash(key);
-	const bucket_index = h % len(im.buckets);
-	const bucket = &im.buckets[bucket_index];
+	const bucket_index = h % len(pi.buckets);
+	const bucket = &pi.buckets[bucket_index];
 
 	assert(len(bucket) < PI_INDEX_MAX);
 
@@ -45,10 +45,10 @@ export fn pi_get(im: *pathinterner, key: *vfspath) (fileid | void) = {
 	};
 };
 
-export fn pi_intern(im: *pathinterner, key: *vfspath) fileid = {
+export fn pi_intern(pi: *pathinterner, key: *vfspath) fileid = {
 	const h = hash(key);
-	const bucket_index = h % len(im.buckets);
-	const bucket = &im.buckets[bucket_index];
+	const bucket_index = h % len(pi.buckets);
+	const bucket = &pi.buckets[bucket_index];
 
 	for (let i = 0z; i < len(bucket); i += 1) {
 		if (vfspath_equals(&bucket[i], key)) {
@@ -57,37 +57,34 @@ export fn pi_intern(im: *pathinterner, key: *vfspath) fileid = {
 			return id;
 		};
 	};
-	im.count += 1;
+	pi.count += 1;
 
 	append(bucket, vfspath_dup(key))!;
 
 	return indexfrom(bucket_index, len(bucket)-1);
 };
 
-export fn pi_lookup(im: *pathinterner, index: fileid) *vfspath = {
+export fn pi_lookup(pi: *pathinterner, index: fileid) *vfspath = {
 	let bucket_index = index & PI_BUCKETS_MAX;
 	let key_index = (index >> PI_BUCKETS_BITS) & PI_INDEX_MAX;
-	let key = &im.buckets[bucket_index][key_index];
-	// fmt::printfln("[lookup] bucket index = {0:b}/{0}, key index = {1:b}/{1}, key = {}, index = {:b}",
-	// 	bucket_index, key_index, key, index: u32
-	// )!;
+	let key = &pi.buckets[bucket_index][key_index];
 	return key;
 };
 
 // iterator
 
 export type pi_iterator = struct {
-	im: *pathinterner,
+	pi: *pathinterner,
 	i: size,
 	j: size,
 };
 
-export fn pi_iter(im: *pathinterner) pi_iterator =
-	pi_iterator { im = im, ... };
+export fn pi_iter(pi: *pathinterner) pi_iterator =
+	pi_iterator { pi = pi, ... };
 
 export fn pi_next(iter: *pi_iterator) ((*vfspath, fileid) | done) = {
-	for (iter.i < len(iter.im.buckets); iter.i += 1) {
-		const bucket = &iter.im.buckets[iter.i];
+	for (iter.i < len(iter.pi.buckets); iter.i += 1) {
+		const bucket = &iter.pi.buckets[iter.i];
 		for (iter.j < len(bucket)) {
 			let key = &bucket[iter.j];
 			iter.j += 1;
