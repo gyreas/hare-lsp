@@ -4,11 +4,8 @@ import pytest
 import pytest_lsp
 from lsprotocol.types import (
     ClientCapabilities,
-    CompletionList,
-    CompletionParams,
     TextDocumentItem,
     InitializeParams,
-    Position,
     DidOpenTextDocumentParams,
     TextDocumentIdentifier,
 )
@@ -42,9 +39,20 @@ async def test_didOpen(client: LanguageClient):
             text_document=TextDocumentItem(
                 uri="file:///home/saed/Projects/hare-lsp/a-file-that-must-not-be-named.file",
                 language_id="hare",
-                text="just a file, really",
+                text="just a file, really\n",
                 version=0,
             )
         )
     )
-    assert(False)
+    client.text_document_did_open(
+        params=DidOpenTextDocumentParams(
+            text_document=TextDocumentItem(
+                uri="file:///home/saed/Projects/hare-lsp/a-file-that-must-not-be-named.file",
+                language_id="hare",
+                text="just a file, really acte\n",
+                version=1,
+            )
+        )
+    )
+    notif = await client.wait_for_notification("textDocument/alreadyOpened")
+    print(f"notif = {notif}", file=sys.stderr)

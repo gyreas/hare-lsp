@@ -116,7 +116,7 @@ export fn deserialize_work_done_progress_params(obj: *json::object) (work_done_p
 		case json::_null => yield void;
 		case => return stopbuggingmeerr;
 		};
-	case void => yield void; 
+	case void => yield void;
 	};
 	return work_done_progress_params {
 		work_done_token = token,

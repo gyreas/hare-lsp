@@ -26,7 +26,7 @@ export type vtable = struct {
 
 	// The shutdown request is sent from the client to the server. It asks
 	// the server to shut down, but to not exit (otherwise the response
-	// might not be delivered correctly to the client). 
+	// might not be delivered correctly to the client).
 	// More info here:
 	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#shutdown
 	shutdown: *shutdown,

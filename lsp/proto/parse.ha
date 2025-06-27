@@ -63,7 +63,7 @@ export fn finish(p: parser) void = {
 // 	case let m: message => handle_message(m);
 //	case let e: error => handle_error(e);
 // 	};
-// 
+//
 // Messages returned by [[next]] must be freed with [[message_finish]] by the
 // caller.
 export fn next(p: *parser) (message | more | error | io::error) = {
