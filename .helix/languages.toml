@@ -1,0 +1,6 @@
+[language-server.harels]
+command = "build/harels"
+
+[[language]]
+name = "hare"
+language-servers = [ "harels" ]

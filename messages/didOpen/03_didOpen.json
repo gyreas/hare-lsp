@@ -1,0 +1,12 @@
+{
+  "jsonrpc": "2.0",
+  "params": {
+    "textDocument": {
+      "languageId": "hare",
+      "version": 0,
+      "uri": "file:///this-is-acting.json",
+      "text": "This is acting - Sia"
+    }
+  },
+  "method": "textDocument/didOpen"
+}

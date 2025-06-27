@@ -7,10 +7,12 @@ use lsp::proto;
 use lsp;
 use net::uri;
 use os;
+use paths;
+use rpc;
 use rt;
 use strings;
 use temp;
-use vfs::overlay;
+use vfs::memfs;
 
 const server_vt = lsp::vtable {
 	shutdown                 = &handle_shutdown,
@@ -26,21 +28,14 @@ const server_vt = lsp::vtable {
 type state = struct {
 	server: lsp::server,
 	conn: connection,
-	fs: overlay::overlayfs,
+	memdocs: memdocs,
+	fs: memfs::memfs,
 	project_root: uri::uri,
 };
 
 fn newstate(conn: connection, workspace_root: uri::uri) state = {
-	let root = path_fromuri(&workspace_root);
-	let tmpdir = ".underfs"; // strings::dup(temp::dir())!;
-
-	match (os::mkdir(tmpdir, 0o755)) {
-	case void => void;
-	case errors::exists => void;
-	case let e: fs::error =>
-		fmt::fatalf("error: {}", fs::strerror(e));
-	};
-
+	let root = paths::fromuri(&workspace_root);
+	// fmt::errorfln("workspace root = {}", root)!;
 
 	return state {
 		server = lsp::server {
@@ -49,17 +44,8 @@ fn newstate(conn: connection, workspace_root: uri::uri) state = {
 		},
 		conn = conn,
 		project_root = workspace_root,
-		fs = overlay::new(tmpdir, root),
-	};
-};
-
-fn path_fromuri(uri: *uri::uri) str = {
-	assert(uri.scheme == "file", "only the 'file' is currently supported");
-	match (uri.host) {
-	case let h: str =>
-		fmt::errorfln("[uri.path = {}], [uri.host = {}]", uri.path, h)!;
-		return uri.path;
-	case => abort("unimplemented");
+		memdocs = newmemdocs(),
+		fs = memfs::new(),
 	};
 };
 
@@ -116,4 +102,25 @@ fn handle_did_close(s: *lsp::server, params: *lsp::did_close_text_params) (void 
 
 fn handle_did_open(s: *lsp::server, params: *lsp::did_open_text_params) (void | lsp::error) = {
 	loginfo("(textDocument/didOpen) {}", uri::string(&params.text_document.uri)!);
+
+	let s = s: *state;
+	let path = paths::fromuri(&params.text_document.uri)!;
+	let vpath = memfs::newvfspath(path);
+
+	fmt::errorfln("[didOpen] resolved path = {}", paths::string(&path))!;
+	if (memdocs_contains(&s.memdocs, &vpath)) {
+		let s = fmt::asprintf("document '{}' already opened", paths::string(&path))!;
+		fmt::errorln("[didOpen]", s)!;
+		return rpc::error {
+			code = DOCUMENT_ALREADY_OPENED,
+			message = s,
+			data = void,
+		};
+	};
+
+	let docdata = newdocdata(params.text_document.version, params.text_document.text);
+	memdocs_insert(&s.memdocs, &vpath, docdata)!;
+	if (!memfs::set_file_contents(&s.fs, &vpath, params.text_document.text)) {
+		abort();
+	};
 };
