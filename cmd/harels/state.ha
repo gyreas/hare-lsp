@@ -113,9 +113,10 @@ fn handle_did_open(s: *lsp::server, params: *lsp::did_open_text_params) (void | 
 	};
 
 	let docdata = newdocdata(params.text_document.version, params.text_document.text);
+	let docscount = memdocs_count(&s.memdocs);
 	memdocs_insert(&s.memdocs, &vpath, docdata)!;
-	if (!memfs::set_file_contents(&s.fs, &vpath, params.text_document.text)) {
-		abort();
-	};
+	assert(memfs::set_file_contents(&s.fs, &vpath, params.text_document.text));
+	assert(memdocs_count(&s.memdocs) > docscount, "should be higher");
+
 	loginfo("[didOpen] number of documents: {}", memdocs_count(&s.memdocs));
 };
