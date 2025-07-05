@@ -28,6 +28,6 @@ export fn main() void = {
 		case let s: str => yield s;
 		case => abort("unimp");
 		};
-		fmt::printfln("{}: scheme={}, host={}, path={}", arg, u.scheme, host, u.path)!;
+		fmt::printfln("[{}]\n\tscheme {}\n\thost   {}\n\tpath   {}", arg, u.scheme, host, u.path)!;
 	};
 };
