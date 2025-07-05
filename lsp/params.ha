@@ -4,7 +4,7 @@ use net::uri;
 export type did_change_text_params = struct {
 	// TODO: Should be a versioned_text_document_item
 	text_document: text_document_identifier,
-	content_changes: text_document_content_change_event_iterator,
+	content_changes: []text_document_content_change_event,
 };
 
 export type did_close_text_params = struct {

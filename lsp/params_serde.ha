@@ -4,12 +4,19 @@ use rpc;
 
 export fn deserialize_did_change_text_params(obj: *json::object) (did_change_text_params | deserialize_error) = {
 	const text_document = deserialize_text_document_identifier(&getobject(obj, "textDocument")?)?;
+	const content_changes = getarray(obj, "contentChanges")?;
+	assert(len(content_changes) > 0, "the client trolled so hard I crashed");
+
+	let casted_content_changes = alloc([]: []text_document_content_change_event, len(content_changes))!;
+	let i = 0;
+	for (let content_change &.. content_changes) {
+		casted_content_changes[i] = deserialize_text_document_content_change_event(content_change: *json::object)?;
+		i += 1;
+	};
+
 	return did_change_text_params {
 		text_document = text_document,
-		content_changes = text_document_content_change_event_iterator {
-			array = getarray(obj, "contentChanges")?,
-			index = 0,
-		},
+		content_changes = casted_content_changes,
 	};
 };
 

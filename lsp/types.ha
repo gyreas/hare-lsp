@@ -44,25 +44,10 @@ export type range = struct {
 	end: position,
 };
 
-export type text_document_content_change_event_iterator = struct {
-	array: []json::value,
-	index: size,
-};
-
-export fn next(iter: *text_document_content_change_event_iterator)
-(text_document_content_change_event | void | deserialize_error) = {
-	const index = iter.index;
-	if (index < len(iter.array)) {
-		iter.index += 1;
-		// TODO: handle error
-		return deserialize_text_document_content_change_event(&(iter.array[index] as json::object));
-	};
-	return void;
-};
-
 // TODO: Could include range..
 export type text_document_content_change_event = struct {
 	text: str,
+	range: (range | void),
 };
 
 export type text_document_identifier = struct {

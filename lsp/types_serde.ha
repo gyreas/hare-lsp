@@ -85,6 +85,15 @@ fn serialize_position(pos: position) json::object = {
 	return obj;
 };
 
+export fn deserialize_range(obj: *json::object) (range | deserialize_error) = {
+	let start = getobject(obj, "start")?;
+	let end = getobject(obj, "end")?;
+	return range {
+		start = deserialize_position(&start)?,
+		end = deserialize_position(&end)?,
+	};
+};
+
 export fn serialize_range(range: range) json::object = {
 	let obj = json::newobject();
 
@@ -101,8 +110,15 @@ export fn serialize_range(range: range) json::object = {
 };
 
 fn deserialize_text_document_content_change_event(obj: *json::object) (text_document_content_change_event | deserialize_error) = {
+	let range = match (tryobject(obj, "range")?) {
+	case let range: json::object =>
+		yield deserialize_range(&range)?;
+	case void =>
+		yield void;
+	};
 	return text_document_content_change_event {
 		text = getstr(obj, "text")?,
+		range = range,
 	};
 };
 
