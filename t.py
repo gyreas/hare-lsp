@@ -7,6 +7,7 @@ from lsprotocol.types import (
     TextDocumentItem,
     InitializeParams,
     DidOpenTextDocumentParams,
+    DidCloseTextDocumentParams,
     TextDocumentIdentifier,
 )
 from pytest_lsp import ClientServerConfig, LanguageClient
@@ -44,6 +45,13 @@ async def test_didOpen(client: LanguageClient):
             )
         )
     )
+    client.text_document_did_close(
+        params=DidCloseTextDocumentParams(
+            text_document=TextDocumentIdentifier(
+                uri="file:///home/saed/Projects/hare-lsp/a-file-that-must-not-be-named.file",
+            )
+        )
+    )
     client.text_document_did_open(
         params=DidOpenTextDocumentParams(
             text_document=TextDocumentItem(
@@ -54,3 +62,5 @@ async def test_didOpen(client: LanguageClient):
             )
         )
     )
+
+    assert False

@@ -15,15 +15,15 @@ mcat:
 test: build mcat
 	@for m in rpc/ lsp/; do echo "\n-- testing: [$m]"; hare test $m; done
 	just test-init
-	just test-didOpen
+	just test-basics
 
 test-init: build mcat
 	@build/mcat $(ls messages/init/*.json) | build/harels
 	@[ $? ] && echo "\ntest-init...PASS" || echo "\ntest-init...FAIL"
 
-test-didOpen: build mcat
-	@build/mcat $(ls messages/didOpen/*.json) | build/harels
-	@[ $? ] && echo "\ntest-didOpen...PASS" || echo "\ntest-didOpen...FAIL"
+test-basics: build mcat
+	@build/mcat $(ls messages/didOpenCloseChangeSave/*.json) | build/harels
+	@[ $? ] && echo "\ntest-basics...PASS" || echo "\ntest-basics...FAIL"
 
 # deletes lines started with comments and blank lines in all forms
 # and counts the rest

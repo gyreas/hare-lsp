@@ -92,6 +92,28 @@ fn handle_did_change(s: *lsp::server, params: *lsp::did_change_text_params) (voi
 
 fn handle_did_close(s: *lsp::server, params: *lsp::did_close_text_params) (void | lsp::error) = {
 	loginfo("(textDocument/didClose) {}", uri::string(&params.text_document.uri)!);
+
+	let s = s: *state;
+	let path = paths::fromuri(&params.text_document.uri)!;
+	let vpath = memfs::newvfspath(path);
+
+	loginfo("[didClose] resolved path = {}", paths::string(&path));
+
+	// remove it from memory
+	match (memdocs_remove(&s.memdocs, &vpath)) {
+	case void =>
+		loginfo("[didClose] removed '{}'", paths::string(&path));
+		loginfo("[didClose] number of documents: {}", memdocs_count(&s.memdocs));
+	case memdocs_error =>
+		// maybe we're being trolled by the client
+		let s = fmt::asprintf("document '{}' was never opened", paths::string(&path))!;
+		logerr("[didClose] {}", s);
+		return rpc::error {
+			code = DOCUMENT_NOT_OPENED,
+			message = s,
+			data = void,
+		};
+	};
 };
 
 fn handle_did_open(s: *lsp::server, params: *lsp::did_open_text_params) (void | lsp::error) = {
@@ -104,7 +126,7 @@ fn handle_did_open(s: *lsp::server, params: *lsp::did_open_text_params) (void | 
 	loginfo("[didOpen] resolved path = {}", paths::string(&path));
 	if (memdocs_contains(&s.memdocs, &vpath)) {
 		let s = fmt::asprintf("document '{}' already opened", paths::string(&path))!;
-		loginfo("[didOpen] document '{}' already opened", s);
+		loginfo("[didOpen] {}", s);
 		return rpc::error {
 			code = DOCUMENT_ALREADY_OPENED,
 			message = s,

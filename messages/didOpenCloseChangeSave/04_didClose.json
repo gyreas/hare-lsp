@@ -1,0 +1,9 @@
+{
+  "jsonrpc": "2.0",
+  "params": {
+    "textDocument": {
+      "uri": "file:///this-is-acting.json"
+    }
+  },
+  "method": "textDocument/didClose"
+}
