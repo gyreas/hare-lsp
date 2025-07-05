@@ -9,11 +9,13 @@ use vfs::memfs::{vfspath};
 
 type memdocs = struct {
 	docs: vfs_data_map, // vfspath => document_data
+	count: size,
 	added_or_removed: bool,
 };
 
 fn newmemdocs() memdocs = memdocs {
 	docs = vfs_data_map { ... },
+	count = 0,
 	added_or_removed = false,
 };
 
@@ -23,6 +25,9 @@ fn memdocs_contains(md: *memdocs, path: *vfspath) bool = {
 
 export type error = !void;
 
+fn memdocs_count(md: *memdocs) size =
+	md.count;
+
 fn memdocs_get(md: *memdocs, path: *vfspath) (document_data | void) =
 	hm_get(&md.docs, path);
 
@@ -30,8 +35,9 @@ fn memdocs_insert(md: *memdocs, path: *vfspath, data: document_data) (void | err
 	md.added_or_removed = true;
 	match (hm_put(&md.docs, path, data)) {
 	case document_data =>
-		return error;
+		return error; // already exist
 	case void =>
+		md.count += 1;
 		return void;
 	};
 };
@@ -39,8 +45,10 @@ fn memdocs_insert(md: *memdocs, path: *vfspath, data: document_data) (void | err
 fn memdocs_remove(md: *memdocs, path: *vfspath) (void | error) = {
 	md.added_or_removed = true;
 	match (hm_remove(&md.docs, path)) {
-	case document_data => return void;
-	case void => return error;
+	case document_data =>
+		md.count -= 1;
+		return void;
+	case void => return error; // doesn't exist
 	};
 };
 

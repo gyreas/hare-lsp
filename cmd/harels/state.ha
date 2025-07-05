@@ -117,4 +117,5 @@ fn handle_did_open(s: *lsp::server, params: *lsp::did_open_text_params) (void | 
 	if (!memfs::set_file_contents(&s.fs, &vpath, params.text_document.text)) {
 		abort();
 	};
+	loginfo("[didOpen] number of documents: {}", memdocs_count(&s.memdocs));
 };
