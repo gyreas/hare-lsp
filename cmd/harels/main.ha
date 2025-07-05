@@ -59,6 +59,7 @@ fn dispatch_one(s: *state) (void | client_error) = {
 	case let e: rpc::error =>
 		fmt::fatalf("[parse] rpc::error: {}", e.message);
 	case let req: rpc::request =>
+		defer rpc::finish(&req);
 		match (lsp::serve_request(&s.server, req)) {
 		case let e: lsp::error =>
 			fmt::fatalf("[serve_request] rpc::error: {}", e.message);
@@ -66,6 +67,7 @@ fn dispatch_one(s: *state) (void | client_error) = {
 			send_response(&s.conn, &r);
 		};
 	case let not: rpc::notification =>
+		defer rpc::finish(&not);
 		match (lsp::serve_notification(&s.server, not)) {
 		case let e: lsp::error =>
 			fmt::errorfln("[serve_notification] rpc::error: {}", e.message)!;

@@ -96,6 +96,32 @@ export fn parse(src: io::handle) (request | notification | error) = {
 	};
 };
 
+export fn finish(rn: (*request | *notification)) void = {
+	match (rn) {
+	case let r: *request =>
+		match (r.id) {
+		case let id: str => free(id);
+		case => void;
+		};
+
+		match (r.params) {
+		case let p: ([]json::value | json::object) =>
+			json::finish(p: json::value);
+		case => void;
+		};
+
+		free(r.method);
+	case let n: *notification =>
+		match (n.params) {
+		case let p: ([]json::value | json::object) =>
+			json::finish(p: json::value);
+		case => void;
+		};
+
+		free(n.method);
+	};
+};
+
 export fn deserialize(v: json::value) (request | notification | deserialize_error) = {
 	let v = v as json::object;
 
@@ -131,7 +157,7 @@ export fn deserialize(v: json::value) (request | notification | deserialize_erro
 	case let i: *json::value =>
 		let id = match (*i) {
 		case let i: f64 => yield i: i32;
-		case str => yield (*i) as str;
+		case let s: str => yield strings::dup(s)!;
 		case => return invalid_json;
 		};
 
