@@ -57,7 +57,7 @@ export fn main() void = {
 		...
 	};
 
-	fmt::printfln("{%}{:=8}{:7}\n", "filename", &filename_mods, "size", "took")!;
+	fmt::printfln("{%}{:=8}{:7}\n", "filename", &filename_mods, "lines", "took")!;
 	sort::sort(counter.entries, size((str, u32, f64)), &entrycmp)!;
 	for (let (entry, linecount, duration) .. counter.entries) {
 		fmt::printfln("{%} {:-5}  {:2f} ms", entry, &mods, linecount, duration)!;
