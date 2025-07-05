@@ -7,11 +7,14 @@ export fn deserialize_did_change_text_params(obj: *json::object) (did_change_tex
 	const content_changes = getarray(obj, "contentChanges")?;
 	assert(len(content_changes) > 0, "the client trolled so hard I crashed");
 
-	let casted_content_changes = alloc([]: []text_document_content_change_event, len(content_changes))!;
-	let i = 0;
-	for (let content_change &.. content_changes) {
-		casted_content_changes[i] = deserialize_text_document_content_change_event(content_change: *json::object)?;
-		i += 1;
+	let casted_content_changes = alloc(
+		[text_document_content_change_event {range = void,...}...],
+		len(content_changes)
+	)!;
+	for (let j = 0z; j < len(content_changes); j += 1) {
+		let content_change = &(content_changes[j]: json::object);
+		casted_content_changes[j] = deserialize_text_document_content_change_event(content_change)?;
+		j += 1;
 	};
 
 	return did_change_text_params {
