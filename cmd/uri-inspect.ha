@@ -26,7 +26,7 @@ export fn main() void = {
 
 		let host = match (u.host) {
 		case let s: str => yield s;
-		case => abort("unimp");
+		case let a: ip::addr => yield ip::string(a);
 		};
 		fmt::printfln("[{}]\n\tscheme {}\n\thost   {}\n\tpath   {}", arg, u.scheme, host, u.path)!;
 	};
