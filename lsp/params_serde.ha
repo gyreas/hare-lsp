@@ -14,7 +14,6 @@ export fn deserialize_did_change_text_params(obj: *json::object) (did_change_tex
 	for (let j = 0z; j < len(content_changes); j += 1) {
 		let content_change = &(content_changes[j]: json::object);
 		casted_content_changes[j] = deserialize_text_document_content_change_event(content_change)?;
-		j += 1;
 	};
 
 	return did_change_text_params {
