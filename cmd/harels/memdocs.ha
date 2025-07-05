@@ -23,7 +23,7 @@ fn memdocs_contains(md: *memdocs, path: *vfspath) bool = {
 	return hm_haskey(&md.docs, path);
 };
 
-export type error = !void;
+export type memdocs_error = !void;
 
 fn memdocs_count(md: *memdocs) size =
 	md.count;
@@ -31,24 +31,24 @@ fn memdocs_count(md: *memdocs) size =
 fn memdocs_get(md: *memdocs, path: *vfspath) (document_data | void) =
 	hm_get(&md.docs, path);
 
-fn memdocs_insert(md: *memdocs, path: *vfspath, data: document_data) (void | error) = {
+fn memdocs_insert(md: *memdocs, path: *vfspath, data: document_data) (void | memdocs_error) = {
 	md.added_or_removed = true;
 	match (hm_put(&md.docs, path, data)) {
 	case document_data =>
-		return error; // already exist
+		return memdocs_error; // already exist
 	case void =>
 		md.count += 1;
 		return void;
 	};
 };
 
-fn memdocs_remove(md: *memdocs, path: *vfspath) (void | error) = {
+fn memdocs_remove(md: *memdocs, path: *vfspath) (void | memdocs_error) = {
 	md.added_or_removed = true;
 	match (hm_remove(&md.docs, path)) {
 	case document_data =>
 		md.count -= 1;
 		return void;
-	case void => return error; // doesn't exist
+	case void => return memdocs_error; // doesn't exist
 	};
 };
 
