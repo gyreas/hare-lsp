@@ -54,5 +54,3 @@ async def test_didOpen(client: LanguageClient):
             )
         )
     )
-    notif = await client.wait_for_notification("textDocument/alreadyOpened")
-    print(f"notif = {notif}", file=sys.stderr)

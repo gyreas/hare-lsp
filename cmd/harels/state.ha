@@ -34,8 +34,8 @@ type state = struct {
 };
 
 fn newstate(conn: connection, workspace_root: uri::uri) state = {
-	let root = paths::fromuri(&workspace_root);
-	loginfo("workspace root = {}", root);
+	let root = paths::fromuri(&workspace_root)!;
+	loginfo("workspace root = {}", paths::string(&root));
 
 	return state {
 		server = lsp::server {
@@ -101,10 +101,10 @@ fn handle_did_open(s: *lsp::server, params: *lsp::did_open_text_params) (void | 
 	let path = paths::fromuri(&params.text_document.uri)!;
 	let vpath = memfs::newvfspath(path);
 
-	fmt::errorfln("[didOpen] resolved path = {}", paths::string(&path))!;
+	loginfo("[didOpen] resolved path = {}", paths::string(&path));
 	if (memdocs_contains(&s.memdocs, &vpath)) {
 		let s = fmt::asprintf("document '{}' already opened", paths::string(&path))!;
-		fmt::errorln("[didOpen]", s)!;
+		loginfo("[didOpen] document '{}' already opened", s);
 		return rpc::error {
 			code = DOCUMENT_ALREADY_OPENED,
 			message = s,
