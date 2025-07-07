@@ -1,6 +1,11 @@
-interesting_modules := "cmd/ lsp/ paths/ rpc/ vfs/memfs/"
+prefix := "~/.local/"
+bindir := prefix/"bin"
+interesting_modules := "cmd/harels lsp/ paths/ rpc/ vfs/"
 
 phony: test-init
+
+install: build
+    cp build/harels {{bindir}}
 
 build:
 	hare build cmd/harels
@@ -13,9 +18,12 @@ mcat:
 	@mv mcat build/
 
 test: build mcat
-	@for m in cmd/harels/ rpc/ lsp/; do echo "\n-- testing: [$m]"; hare test $m; done
+	@for m in {{interesting_modules}}; do echo "\n-- testing: [$m]"; hare test $m; done
+	@printf "\n"
 	just test-init
+	@printf "\n"
 	just test-basics
+	@printf "\n"
 
 test-init: build mcat
 	@build/mcat $(ls messages/init/*.json) | build/harels
