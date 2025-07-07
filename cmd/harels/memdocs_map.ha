@@ -21,7 +21,7 @@ fn hm_finish(hm: *vfs_data_map) void = {
 fn hash(key: *vfspath) size =
 	fnv::string(vfs::vfspath_string(key));
 
-fn hm_get(hm: *vfs_data_map, k: *vfspath) (document_data | void) = {
+fn hm_get(hm: *vfs_data_map, k: *vfspath) (*document_data | void) = {
 	let l = len(hm.keys);
 	let h = hash(k);
 	let kbucket = &hm.keys[h % l];
@@ -32,7 +32,7 @@ fn hm_get(hm: *vfs_data_map, k: *vfspath) (document_data | void) = {
 	let l = len(kbucket);
 	for (let i = 0z; i < l; i += 1) {
 		if (vfs::vfspath_equals(&kbucket[i], k)) {
-			return vbucket[i];
+			return &vbucket[i];
 		};
 	};
 };

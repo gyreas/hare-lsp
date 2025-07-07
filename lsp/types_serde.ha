@@ -5,6 +5,8 @@ use io;
 use net::uri;
 use strings;
 
+// TODO: copy owned data in this place to prevent data invalidation when the json::value is dropped
+// e.g by rebinding the name
 export fn serialize_hover(h: *hover) json::object = {
 	let obj = json::newobject();
 
@@ -117,7 +119,7 @@ fn deserialize_text_document_content_change_event(obj: *json::object) (text_docu
 		yield void;
 	};
 	return text_document_content_change_event {
-		text = getstr(obj, "text")?,
+		text = strings::dup(getstr(obj, "text")?)!,
 		range = range,
 	};
 };

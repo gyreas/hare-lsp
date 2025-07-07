@@ -1,0 +1,44 @@
+{
+  "jsonrpc": "2.0",
+  "params": {
+    "textDocument": {
+      "version": 0,
+      "uri": "file:///this-is-acting.json"
+    },
+    "contentChanges": [
+        {
+          "text": "This i1s acting - Sia1"
+        },
+        {
+          "text": "This i4444s acting - Sia4444"
+        },
+        {
+          "text": "(This is acting)",
+          "range": {
+            "start": {
+                "line": 0,
+                "character": 5
+            },
+            "end": {
+                "line": 0,
+                "character": 11
+            }
+          }
+        },
+        {
+          "text": "(This is acting)",
+          "range": {
+            "start": {
+                "line": 0,
+                "character": 14
+            },
+            "end": {
+                "line": 0,
+                "character": 20
+            }
+          }
+        }
+    ]
+  },
+  "method": "textDocument/didChange"
+}

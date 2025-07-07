@@ -127,7 +127,7 @@ fn initialize_end(conn: *connection, initialize_id: (i32 | str)) void = {
 			let result = lsp::initialize_result {
 				capabilities = lsp::server_capabilities {
 					position_encoding = lsp::POS_ENC_UTF16,
-					text_document_sync = void,
+					text_document_sync = lsp::text_document_sync_kind::INCREMENTAL,
 					definition_provider = void,
 					hover_provider = void,
 				},

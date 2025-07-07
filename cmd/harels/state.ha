@@ -88,6 +88,21 @@ fn handle_exit(s: *lsp::server) void = {
 
 fn handle_did_change(s: *lsp::server, params: *lsp::did_change_text_params) (void | lsp::error) = {
 	loginfo("(textDocument/didChange) {}", uri::string(&params.text_document.uri)!);
+
+	let s = s: *state;
+	let path = paths::fromuri(&params.text_document.uri)!;
+	let vpath = memfs::newvfspath(path);
+
+	loginfo("[didChange] resolved path = {}", paths::string(&path));
+
+	let memdoc = memdocs_get(&s.memdocs, &vpath) as *document_data;
+
+	loginfo("[didChange] pre: '{}'", memdoc.data);
+
+	let newdata = apply_document_changes(memdoc.data, params.content_changes);
+	// memdoc.version = params.text_document.version;
+	loginfo("[didChange] post: '{}'", newdata);
+	memdoc.data = newdata;
 };
 
 fn handle_did_close(s: *lsp::server, params: *lsp::did_close_text_params) (void | lsp::error) = {

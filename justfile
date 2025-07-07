@@ -13,7 +13,7 @@ mcat:
 	@mv mcat build/
 
 test: build mcat
-	@for m in rpc/ lsp/; do echo "\n-- testing: [$m]"; hare test $m; done
+	@for m in cmd/harels/ rpc/ lsp/; do echo "\n-- testing: [$m]"; hare test $m; done
 	just test-init
 	just test-basics
 
