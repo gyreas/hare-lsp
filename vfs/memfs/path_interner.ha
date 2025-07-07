@@ -3,7 +3,6 @@ use hash::fnv;
 use strings;
 use types;
 
-// TODO: Resize table as appropriate
 def PI_BUCKETS: size      = 32;
 def PI_BUCKETS_BITS: size = 5;
 def PI_BUCKETS_MAX: size  = (1 << PI_BUCKETS_BITS) - 1;

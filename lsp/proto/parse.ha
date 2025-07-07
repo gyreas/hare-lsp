@@ -214,9 +214,6 @@ fn next_header(p: *parser) (void | error) = {
 	};
 
 	if (key == "Content-Type") {
-		// TODO: Eventually, for now I don't really care..
-		// Only 'utf-8' or 'utf8' is supported currently in the
-		// specification
 		return;
 	};
 

@@ -8,7 +8,7 @@ use strings;
 export def JSONRPC_VERSION: str = "2.0";
 
 export type deserialize_error = !(invalid_json | no_jsonrpc | invalid_version | no_method);
-// todo: How does this relate to message batching which
+// TODO: How does this relate to message batching which
 // requires array of JSON objects?
 export type invalid_json    = !void;
 export type no_jsonrpc      = !void;
@@ -70,7 +70,6 @@ export type response = struct {
 // caller must free the returned value with [[finish]]. Note that allocations
 // also happens on error, so the error must eventually be freed from a
 // [[response]].
-// TODO: implement for strings as well
 export fn parse(src: io::handle) (request | notification | error) = {
 	let v = match (json::load(src)) {
 	case let v: json::value =>
