@@ -44,7 +44,7 @@ export type range = struct {
 	end: position,
 };
 
-// TODO: Could include range..
+// TODO: Could include range length..
 export type text_document_content_change_event = struct {
 	text: str,
 	range: (range | void),

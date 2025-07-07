@@ -4,9 +4,8 @@ use fmt;
 use io;
 use net::uri;
 use strings;
+use rpc;
 
-// TODO: copy owned data in this place to prevent data invalidation when the json::value is dropped
-// e.g by rebinding the name
 export fn serialize_hover(h: *hover) json::object = {
 	let obj = json::newobject();
 
@@ -17,7 +16,7 @@ export fn serialize_hover(h: *hover) json::object = {
 	case let range: range =>
 		const range = serialize_range(range);
 		defer json::finish(range);
-		json::set(&obj, "range", contents)!;
+		json::set(&obj, "range", range)!;
 	case void => void;
 	};
 
@@ -147,8 +146,25 @@ fn deserialize_text_document_item(obj: *json::object) (text_document_item | dese
 
 	return text_document_item {
 		uri = uri,
-		language_id = getstr(obj, "languageId")?,
+		language_id = strings::dup(getstr(obj, "languageId")?)!,
 		version = getfloat(obj, "version")?: i32,
-		text = getstr(obj, "text")?,
+		text = strings::dup(getstr(obj, "text")?)!,
+	};
+};
+
+export fn deserialize_workspace_folder(obj: *json::object) (workspace_folder | deserialize_error) = {
+	let uri = match (trystr(obj, "uri")?) {
+	case let u: str => yield u;
+	case void => return rpc::invalid_json;
+	};
+
+	let name = match (trystr(obj, "name")?) {
+	case let n: str => yield n;
+	case void => return rpc::invalid_json;
+	};
+
+	return workspace_folder {
+		uri = uri::parse(uri)!,
+		name = strings::dup(name)!,
 	};
 };

@@ -1,7 +1,6 @@
 use encoding::json;
 
-fn deserialize_general_client_capabilities(obj: *json::object)
-(general_client_capabilities | deserialize_error) = {
+fn deserialize_general_client_capabilities(obj: *json::object) (general_client_capabilities | deserialize_error) = {
 	// TODO
 	return general_client_capabilities {
 		position_encoding = [POS_ENC_UTF8],

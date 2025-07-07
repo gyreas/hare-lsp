@@ -7,13 +7,11 @@ export fn deserialize_did_change_text_params(obj: *json::object) (did_change_tex
 	const content_changes = getarray(obj, "contentChanges")?;
 	assert(len(content_changes) > 0, "the client trolled so hard I crashed");
 
-	let casted_content_changes = alloc(
-		[text_document_content_change_event {range = void,...}...],
-		len(content_changes)
-	)!;
-	for (let j = 0z; j < len(content_changes); j += 1) {
-		let content_change = &(content_changes[j]: json::object);
-		casted_content_changes[j] = deserialize_text_document_content_change_event(content_change)?;
+	let casted_content_changes: []text_document_content_change_event = alloc([], len(content_changes))!;
+
+	for (let content_change .. content_changes) {
+		append(casted_content_changes,
+			deserialize_text_document_content_change_event(&(content_change: json::object))?)!;
 	};
 
 	return did_change_text_params {
@@ -132,34 +130,21 @@ export fn deserialize_work_done_progress_params(obj: *json::object) (work_done_p
 	};
 };
 
-fn serialize_work_done_token_params(p: *work_done_progress_params, obj: *json::object) void = {
+fn serialize_work_done_token_params(p: *work_done_progress_params) json::object = {
+	let obj = json::newobject();
+
 	match (p.work_done_token) {
 	case let token: progress_token =>
-			match (token) {
-			case let number: i32 =>
-				json::set(obj, "workDoneToken", number: f64)!;
-			case let s: str =>
-				json::set(obj, "workDoneToken", s)!;
-			};
+		match (token) {
+		case let number: i32 =>
+			json::set(&obj, "workDoneToken", number: f64)!;
+		case let s: str =>
+			json::set(&obj, "workDoneToken", s)!;
+		};
 	case void => void;
 	// FIXME: WHy do we need this when not initializing?
 	case => void;
 	};
-};
 
-export fn deserialize_workspace_folder(obj: *json::object) (workspace_folder | deserialize_error) = {
-	let uri = match (trystr(obj, "uri")?) {
-	case let u: str => yield u;
-	case void => return rpc::invalid_json;
-	};
-
-	let name = match (trystr(obj, "name")?) {
-	case let n: str => yield n;
-	case void => return rpc::invalid_json;
-	};
-
-	return workspace_folder {
-		uri = uri::parse(uri)!,
-		name = name,
-	};
+	return obj;
 };
