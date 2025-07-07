@@ -54,6 +54,11 @@ export type text_document_identifier = struct {
 	uri: uri::uri,
 };
 
+export type versioned_text_document_identifier = struct {
+	version: i32,
+	uri: uri::uri,
+};
+
 export type text_document_item = struct {
 	uri: uri::uri,
 	language_id: str,

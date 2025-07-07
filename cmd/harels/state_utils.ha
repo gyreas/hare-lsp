@@ -13,7 +13,6 @@ fn apply_document_changes(contents: str, content_changes: []lsp::text_document_c
 		let j = len(content_changes) - i;
 		let content_change = &content_changes[j];
 		if (content_change.range is void) {
-			// TODO: handle versioning
 			free(contents);
 			contents = content_change.text;
 			content_changes = content_changes[j + 1..];

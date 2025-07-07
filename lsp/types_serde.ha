@@ -132,6 +132,20 @@ fn deserialize_text_document_identifier(obj: *json::object) (text_document_ident
 	};
 
 	return text_document_identifier {
+		uri = uri
+	};
+};
+
+fn deserialize_versioned_text_document_identifier(obj: *json::object) (versioned_text_document_identifier | deserialize_error) = {
+	const uri = match (uri::parse(getstr(obj, "uri")?)) {
+	case let uri: uri::uri =>
+		yield uri;
+	case uri::invalid =>
+		return stopbuggingmeerr;
+	};
+
+	return versioned_text_document_identifier {
+		version = getint(obj, "version")?,
 		uri = uri,
 	};
 };

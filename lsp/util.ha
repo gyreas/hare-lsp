@@ -103,6 +103,15 @@ fn trystrnull(obj: *json::object, key: str) (str | json::_null | void | deserial
 	};
 };
 
+fn getint(obj: *json::object, key: str) (i32 | deserialize_error) = {
+	match (tryint(obj, key)?) {
+	case let val: i32 =>
+		return val;
+	case void =>
+		return stopbuggingmeerr;
+	};
+};
+
 fn tryint(obj: *json::object, key: str) (i32 | void | deserialize_error) = {
 	match (tryintnull(obj, key)?) {
 	case let val: (i32 | void) =>

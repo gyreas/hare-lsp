@@ -3,7 +3,7 @@ use net::uri;
 use rpc;
 
 export fn deserialize_did_change_text_params(obj: *json::object) (did_change_text_params | deserialize_error) = {
-	const text_document = deserialize_text_document_identifier(&getobject(obj, "textDocument")?)?;
+	const text_document = deserialize_versioned_text_document_identifier(&getobject(obj, "textDocument")?)?;
 	const content_changes = getarray(obj, "contentChanges")?;
 	assert(len(content_changes) > 0, "the client trolled so hard I crashed");
 
@@ -15,7 +15,7 @@ export fn deserialize_did_change_text_params(obj: *json::object) (did_change_tex
 	};
 
 	return did_change_text_params {
-		text_document = text_document,
+		text_document = text_document, 
 		content_changes = casted_content_changes,
 	};
 };

@@ -100,9 +100,9 @@ fn handle_did_change(s: *lsp::server, params: *lsp::did_change_text_params) (voi
 	loginfo("[didChange] pre: '{}'", memdoc.data);
 
 	let newdata = apply_document_changes(memdoc.data, params.content_changes);
-	// memdoc.version = params.text_document.version;
-	loginfo("[didChange] post: '{}'", newdata);
+	memdoc.version = params.text_document.version;
 	memdoc.data = newdata;
+	loginfo("[didChange] post: '{}'", docdata_string(memdoc));
 };
 
 fn handle_did_close(s: *lsp::server, params: *lsp::did_close_text_params) (void | lsp::error) = {
