@@ -112,7 +112,32 @@ fn initialize_begin(conn: *connection, ) (((i32 | str), lsp::initialize_params) 
 
 fn initialize_end(conn: *connection, initialize_id: (i32 | str)) void = {
 	let pfds = [conn.receiver, conn.sender];
-	let init_state = 0;
+
+	{
+		match (rt::poll(&pfds, len(pfds), -1)) {
+		case let e: rt::errno =>
+			fmt::fatalf("error: {}", rt::strerror(e));
+		case let n: int =>
+			fmt::errorfln("number of ready = {}", n)!;
+		};
+
+		let result = lsp::initialize_result {
+			capabilities = lsp::server_capabilities {
+				position_encoding = lsp::POS_ENC_UTF16,
+				text_document_sync = lsp::text_document_sync_kind::INCREMENTAL,
+				definition_provider = void,
+				hover_provider = void,
+			},
+			server_info = lsp::server_info {
+				name = "harels",
+				version = "",
+			},
+		};
+		let result = lsp::serialize_initialize_result(&result);
+		let response = lsp::to_response(initialize_id, result);
+		send_response(conn, &response);
+		fmt::errorln("initialize result sent, accepting initialize parameters")!;
+	};
 
 	for (true) {
 		match (rt::poll(&pfds, len(pfds), -1)) {
@@ -122,65 +147,41 @@ fn initialize_end(conn: *connection, initialize_id: (i32 | str)) void = {
 			fmt::errorfln("number of ready = {}", n)!;
 		};
 
-		switch (init_state) {
-		case 0 =>
-			let result = lsp::initialize_result {
-				capabilities = lsp::server_capabilities {
-					position_encoding = lsp::POS_ENC_UTF16,
-					text_document_sync = lsp::text_document_sync_kind::INCREMENTAL,
-					definition_provider = void,
-					hover_provider = void,
-				},
-				server_info = lsp::server_info {
-					name = "harels",
-					version = "",
-				},
-			};
-			let result = lsp::serialize_initialize_result(&result);
-			let response = lsp::to_response(initialize_id, result);
-			send_response(conn, &response);
-
-			fmt::errorln("initialize result sent, accepting initialize parameters")!;
-			init_state = 1;
-
-		case 1 =>
-			// TODO: the parser returning more doesn't mean there's message waiting,
-			// 	just that we're constructing incomplete message yet
-			// 	so, maybe figure out how to batch any constructed messages, universally
-			// okay...
-			let m = match (proto::next(&conn.parser)) {
-			case let msg: proto::message =>
-				yield msg;
-			case proto::more =>
-				fmt::errorfln("[more]")!;
-				// for example, there shouldn't be a need for this
-				abort();
-			case let err: proto::error =>
-				fmt::fatalf("[recv] error: {}", proto::strerror(err));
-			};
-
-			let b = memio::fixed(strings::toutf8(m.content));
-			let rd = io::limitreader(&b, m.headers.content_length: size);
-
-			match (rpc::parse(&rd)) {
-			case let req: rpc::request =>
-				fmt::errorfln("[rpc] got a request instaead of a notif")!;
-				if (true) abort();
-			case let notif: rpc::notification =>
-				fmt::errorfln("[rpc] got a notif")!;
-
-				// Drop all notifications except exit notifications
-				if (notif.method != "initialized") {
-					abort();
-				};
-
-				// handle exit notification
-				return;
-			};
-			fmt::errorln("initialization complete, moving on to other thing")!;
-			break;
-		case => abort();
+		// TODO: the parser returning more doesn't mean there's message waiting,
+		// 	just that we're constructing incomplete message yet
+		// 	so, maybe figure out how to batch any constructed messages, universally
+		// okay...
+		let m = match (proto::next(&conn.parser)) {
+		case let msg: proto::message =>
+			yield msg;
+		case proto::more =>
+			fmt::errorfln("[more]")!;
+			// for example, there shouldn't be a need for this
+			abort();
+		case let err: proto::error =>
+			fmt::fatalf("[recv] error: {}", proto::strerror(err));
 		};
+
+		let b = memio::fixed(strings::toutf8(m.content));
+		let rd = io::limitreader(&b, m.headers.content_length: size);
+
+		match (rpc::parse(&rd)) {
+		case let req: rpc::request =>
+			fmt::errorfln("[rpc] got a request instaead of a notif")!;
+			if (true) abort();
+		case let notif: rpc::notification =>
+			fmt::errorfln("[rpc] got a notif")!;
+
+			// Drop all notifications except exit notifications
+			if (notif.method != "initialized") {
+				abort();
+			};
+
+			// handle exit notification
+			return;
+		};
+		fmt::errorln("initialization complete, moving on to other thing")!;
+		break;
 	};
 };
 
