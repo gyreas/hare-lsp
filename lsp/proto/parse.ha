@@ -23,11 +23,9 @@ export type parser = struct {
 	state: state,
 	headers: headers,
 	in: io::handle,
-	// TODO: use memio
 	buf: []u8,
 	pbuf: []u8,
 	needs_lf: bool,
-	// TODO:
 	// the tag to check if the most recent bytes contain the
 	// valid start of a message, that is if a 'C' was seen.
 	// it is reset when a message is successfully parsed
